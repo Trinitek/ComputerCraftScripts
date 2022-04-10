@@ -62,7 +62,7 @@ CCBinaryReadHandle = {
     readAll = function (count) end
 }
 
----@class CCFileWriteHandle : CCFileHandle_Flushable
+---@class CCFileWriteHandle : CCFileHandle_Closable, CCFileHandle_Flushable
 CCFileWriteHandle = {
     ---Write a string of characters to the file.
     ---@param value string The value to write to the file.
