@@ -12,6 +12,7 @@ local function listContains(list, x)
     for _, v in pairs(list) do
         if v == x then return true end
     end
+    return false
 end
 
 local function checkForSelfUpdate()
@@ -70,11 +71,29 @@ local function checkForSelfUpdate()
     
         print("Updated " .. updaterProgramName .. " (" .. string.len(fetchedScriptContents) .. " chars)")
     
-        shell.execute(arg[0], table.concat(arg, " "))
+        shell.execute(arg[0], table.concat(arg, " ") .. " -u")
     else
         print("No updates available for " .. updaterProgramName .. ".")
     end
 end
+
+local function updateProgramPath()
+    local paths = { }
+
+    -- separator character is a colon `:`
+    for p in string.gmatch(shell.path(), "({^:]+)") do
+        table.insert(paths, p)
+    end
+
+    if not listContains(paths, ccsDirectory) then
+        print("Adding " .. ccsDirectory .. " to program path")
+        table.insert(paths, ccsDirectory)
+        local newPath = table.concat(paths, ":");
+        shell.setPath(newPath);
+    end
+end
+
+-- Entry point
 
 if not listContains(arg, "-u") then
     checkForSelfUpdate()
@@ -82,3 +101,7 @@ if not listContains(arg, "-u") then
 end
 
 print("TODO: Do package updates here...")
+
+updateProgramPath()
+
+print("Done")

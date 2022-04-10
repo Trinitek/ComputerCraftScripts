@@ -23,7 +23,18 @@ shell = {
     exit = function () end,
     dir = function () end,
     setDir = function (dir) end,
+
+    ---Get the path where programs are located.
+    ---
+    ---The path is composed of a list of directory names in a string, each separated by a colon (`:`).
+    ---On normal turtles, this will look in the current directory (`.`), `/rom/programs`, and `/rom/programs/turtle` folders.
+    ---This will form the path `.:/rom/programs:/rom/programs/turtle`.
     path = function () end,
+
+    ---Set the current program path as returned by `shell.path()`.
+    ---
+    ---Be careful not to prefix directories with a `/`. Otherwise they will be searched for from the current directory rather than the computer's root.
+    ---@param path string The new program path.
     setPath = function (path) end,
 
     ---Resolve a relative path to an absolute path.
