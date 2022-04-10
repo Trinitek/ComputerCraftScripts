@@ -15,7 +15,7 @@ local selfFileRead
 ---@type string
 local selfFileReadErr
 
-selfFileRead, selfFileReadErr = fs.open(arg[0], "r")
+selfFileRead, selfFileReadErr = fs.open(updaterPath, "r")
 
 if not selfFileRead then
     error("Could not read updater script: " .. selfFileReadErr)
