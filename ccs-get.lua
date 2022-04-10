@@ -131,8 +131,7 @@ local github = {
             error(failureReason);
         end
 
-        ---@type GithubContent[]
-        local contentList = textutils.unserializeJSON(response.readAll())
+        return textutils.unserializeJSON(response.readAll())
     end
 }
 
