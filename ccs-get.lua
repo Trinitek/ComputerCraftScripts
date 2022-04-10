@@ -106,8 +106,8 @@ end
 ---@field path string
 ---@field sha string
 ---@field size integer
----@field url string
----@field download_url string
+---@field url string URL to a content endpoint for this file. Useful for recursing directories.
+---@field download_url string URL to the file's raw content.
 ---@field type '"file"'|'"dir"'
 
 local github = {
