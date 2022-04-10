@@ -80,7 +80,7 @@ local function checkForSelfUpdate()
 
         return true
     else
-        print("No updates available for " .. updaterProgramName .. ".")
+        print("No updates available for " .. updaterProgramName)
         return false
     end
 end
@@ -101,11 +101,55 @@ local function updateProgramPath()
     end
 end
 
+---@class GithubContent
+---@field name string
+---@field path string
+---@field sha string
+---@field size integer
+---@field url string
+---@field download_url string
+---@field type '"file"'|'"dir"'
+
+local github = {
+    ---@param url? string Content endpoint to fetch
+    ---@return GithubContent[] contentListing
+    getContentListing = function (url)
+        local headers = {
+            ["Accept"] = "application/vnd.github.v3+json"
+        }
+
+        url = url or "https://api.github.com/repos/Trinitek/ComputerCraftScripts/contents"
+
+        ---@type CCHttpResponse
+        local response
+        ---@type string
+        local failureReason
+
+        response, failureReason = http.get(url, headers)
+
+        if not response then
+            error(failureReason);
+        end
+
+        ---@type GithubContent[]
+        local contentList = textutils.unserializeJSON(response.readAll())
+    end
+}
+
 -- Entry point
 
 if not listContains(arg, "-u") then
     if checkForSelfUpdate() then
         return
+    end
+end
+
+local rootListing = github.getContentListing();
+
+for _, v in pairs(rootListing) do
+    if v.name == "scripts" then
+        print(v.url)
+        break
     end
 end
 
