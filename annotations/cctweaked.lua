@@ -268,38 +268,38 @@ redstone = {
 ---@field yday integer The nth day of the year.
 
 ---@alias CCEventFilter
----| "alarm" #asdf
----| "char"
----| "computer_command"
----| "disk"
----| "disk_eject"
----| "http_check"
----| "http_failure"
----| "http_success"
----| "key"
----| "key_up"
----| "modem_message"
----| "monitor_resize"
----| "monitor_touch"
----| "mouse_click"
----| "mouse_drag"
----| "mouse_scroll"
----| "mouse_up"
----| "paste"
----| "peripheral"
----| "peripheral_detach"
----| "rednet_message"
----| "redstone"
----| "speaker_audio_empty"
----| "task_complete"
----| "term_resize"
----| "terminate"
----| "timer"
----| "turtle_inventory"
----| "websocket_closed"
----| "websocket_failure"
----| "websocket_message"
----| "websocket_success"
+---| '"alarm"'
+---| '"char"'
+---| '"computer_command"'
+---| '"disk"'
+---| '"disk_eject"'
+---| '"http_check"'
+---| '"http_failure"'
+---| '"http_success"'
+---| '"key"'
+---| '"key_up"'
+---| '"modem_message"'
+---| '"monitor_resize"'
+---| '"monitor_touch"'
+---| '"mouse_click"'
+---| '"mouse_drag"'
+---| '"mouse_scroll"'
+---| '"mouse_up"'
+---| '"paste"'
+---| '"peripheral"'
+---| '"peripheral_detach"'
+---| '"rednet_message"'
+---| '"redstone"'
+---| '"speaker_audio_empty"'
+---| '"task_complete"'
+---| '"term_resize"'
+---| '"terminate"'
+---| '"timer"'
+---| '"turtle_inventory"'
+---| '"websocket_closed"'
+---| '"websocket_failure"'
+---| '"websocket_message"'
+---| '"websocket_success"'
 
 os = {
     ---Pause execution of the current thread and waits for any events matching the given filter.
