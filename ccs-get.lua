@@ -15,6 +15,7 @@ local function listContains(list, x)
     return false
 end
 
+---@return boolean appliedUpdate
 local function checkForSelfUpdate()
     print("ccs-get: An installer and updater")
     
@@ -72,8 +73,10 @@ local function checkForSelfUpdate()
         print("Updated " .. updaterProgramName .. " (" .. string.len(fetchedScriptContents) .. " chars)")
     
         shell.execute(arg[0], table.concat(arg, " ") .. " -u")
+        return true
     else
         print("No updates available for " .. updaterProgramName .. ".")
+        return false
     end
 end
 
@@ -96,8 +99,9 @@ end
 -- Entry point
 
 if not listContains(arg, "-u") then
-    checkForSelfUpdate()
-    return
+    if checkForSelfUpdate() then
+        return
+    end
 end
 
 print("TODO: Do package updates here...")
