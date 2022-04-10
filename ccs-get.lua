@@ -71,8 +71,13 @@ local function checkForSelfUpdate()
         selfFileWrite.close()
     
         print("Updated " .. updaterProgramName .. " (" .. string.len(fetchedScriptContents) .. " chars)")
-    
-        shell.execute(arg[0], table.concat(arg, " ") .. " -u")
+
+        if not listContains(arg, "-u") then
+            table.insert(arg, "-u")
+        end
+
+        shell.run(arg[0] .. " " .. table.concat(arg, " "))
+
         return true
     else
         print("No updates available for " .. updaterProgramName .. ".")
@@ -84,7 +89,7 @@ local function updateProgramPath()
     local paths = { }
 
     -- separator character is a colon `:`
-    for p in string.gmatch(shell.path(), "({^:]+)") do
+    for p in string.gmatch(shell.path(), "([^:]+)") do
         table.insert(paths, p)
     end
 
