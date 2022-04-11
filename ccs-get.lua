@@ -110,7 +110,7 @@ end
 ---@field size integer
 ---@field url string URL to a content endpoint for this file. Useful for recursing directories.
 ---@field download_url string URL to the file's raw content.
----@field type '"file"'|'"dir"'
+---@field type '"file"'|'"dir"'|'"symlink"'|'"submodule"'
 
 local github = {
     ---@param url? string Content endpoint to fetch
@@ -147,13 +147,13 @@ local function enumerateContentListings(url)
     ---@type ContentListing[]
     local contents = { }
 
-    ---@param url string
-    local function recursiveGet(url)
+    ---@param rUrl string
+    local function recursiveGet(rUrl)
 
-        for _, v in pairs(github.getContentListing(url)) do
+        for _, v in pairs(github.getContentListing(rUrl)) do
             if v.type == "dir" then
                 recursiveGet(v.url)
-            else
+            elseif v.type == "file" then
                 -- Remove remote root directory (and following slash) and replace it with local root
                 local remotePath = string.sub(v.path, string.len(githubScriptsDirectory) + 2, -1)
                 local localDestPath = fs.combine(ccsDirectory, remotePath)
