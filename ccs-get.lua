@@ -113,6 +113,9 @@ end
 ---@field type '"file"'|'"dir"'|'"symlink"'|'"submodule"'
 
 local github = {
+    ---Gets file and directory content from a GitHub `contents` endpoint.
+    ---See https://docs.github.com/en/rest/reference/repos#get-repository-content.
+    ---A valid URL will look like `https://api.github.com/repos/{owner}/{repo}/contents/{path}`.
     ---@param url? string Content endpoint to fetch
     ---@return GithubContent[] contentListing
     getContentListing = function (url)
