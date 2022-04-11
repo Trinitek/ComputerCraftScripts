@@ -200,7 +200,7 @@ fs = {
     ---Throws if the file or directory couldn't be deleted.
     delete = function (path) end,
 
-    ---Opens a file for reading or writing.
+    ---Opens a file for reading or writing. When opening a file in write mode, any missing parent directories on the path will be created.
     ---@param path string The path to the file to open.
     ---@param mode CCFileMode The mode to open the file with.
     ---@return CCFileReadHandle | CCFileWriteHandle | CCBinaryReadHandle | CCFileBinaryWriteHandle | nil handle A file handle, or nil if the file could not be opened.

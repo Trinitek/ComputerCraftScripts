@@ -6,6 +6,8 @@
 local updaterProgramName = "ccs-get"
 local ccsDirectory = "ccs"
 local updaterUrl = "https://raw.githubusercontent.com/Trinitek/ComputerCraftScripts/master/ccs-get.lua"
+local githubContentRoot = "https://api.github.com/repos/Trinitek/ComputerCraftScripts/contents"
+local githubScriptsDirectory = "scripts"
 
 ---@return boolean
 local function listContains(list, x)
@@ -118,7 +120,7 @@ local github = {
             ["Accept"] = "application/vnd.github.v3+json"
         }
 
-        url = url or "https://api.github.com/repos/Trinitek/ComputerCraftScripts/contents"
+        url = url or githubContentRoot
 
         ---@type CCHttpResponse
         local response
@@ -135,6 +137,58 @@ local github = {
     end
 }
 
+---@class ContentListing
+---@field localPath string
+---@field githubContent GithubContent
+
+---@param url string
+---@return ContentListing[]
+local function enumerateContentListings(url)
+    ---@type ContentListing[]
+    local contents = { }
+
+    ---@param url string
+    local function recursiveGet(url)
+
+        for _, v in pairs(github.getContentListing(url)) do
+            if v.type == "dir" then
+                recursiveGet(v.url)
+            else
+                -- Remove remote root directory (and following slash) and replace it with local root
+                local remotePath = string.sub(v.path, string.len(githubScriptsDirectory) + 2, -1)
+                local localDestPath = fs.combine(ccsDirectory, remotePath)
+                table.insert(contents, { localPath = localDestPath, githubContent = v })
+            end
+        end
+    end
+
+    recursiveGet(githubContentRoot .. "/" .. githubScriptsDirectory)
+
+    return contents
+end
+
+---@return GithubContent|nil
+local function findRemoteScriptsDirectory()
+    local rootListing = github.getContentListing();
+
+    for _, v in pairs(rootListing) do
+        if v.name == githubScriptsDirectory then
+            return v
+        end
+    end
+
+    return nil
+end
+
+-- If loaded with `require`, expose some functions but do not execute main section.
+if package.loaded["ccs-get"] then
+    return {
+        listContains = listContains,
+        github = github,
+        enumerateContentListings = enumerateContentListings
+    }
+end
+
 -- Entry point
 
 if not listContains(arg, "-ssu") then
@@ -143,16 +197,31 @@ if not listContains(arg, "-ssu") then
     end
 end
 
-local rootListing = github.getContentListing();
+print("Using remote root '" .. githubContentRoot .. "'")
 
-for _, v in pairs(rootListing) do
-    if v.name == "scripts" then
-        print(v.url)
-        break
-    end
+local remoteScriptsContent = findRemoteScriptsDirectory()
+
+if not remoteScriptsContent then
+    error("Could not find '" .. githubScriptsDirectory .. "' on remote")
+else
+    print("Found content directory '" .. githubScriptsDirectory .. "' on remote")
 end
 
-print("TODO: Do package updates here...")
+for _, v in pairs(enumerateContentListings(remoteScriptsContent.url)) do
+    print("Fetching " .. v.githubContent.path)
+
+    local destFile = fs.open(v.localPath, "wb")
+    local remoteRequest, failReason = http.get(v.githubContent.download_url, nil, true)
+
+    if not remoteRequest then
+        error(failReason)
+    end
+
+    destFile.write(remoteRequest.readAll())
+
+    destFile.close()
+    remoteRequest.close()
+end
 
 updateProgramPath()
 
