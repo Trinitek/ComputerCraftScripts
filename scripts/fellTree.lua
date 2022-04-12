@@ -47,8 +47,9 @@ until not hasBlockAbove
 
 for i = height, 1, -1 do
     turtle.down()
-    turtle.back()
-    turtle.back()
 end
+
+turtle.back()
+turtle.back()
 
 print("Height " .. height)
