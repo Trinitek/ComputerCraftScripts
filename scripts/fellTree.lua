@@ -4,6 +4,10 @@
 ---@type integer
 local height = 0
 
+-- Just in case leaves generated right in front of the turtle
+turtle.dig()
+turtle.suck()
+
 turtle.forward()
 turtle.dig()
 turtle.suck()
