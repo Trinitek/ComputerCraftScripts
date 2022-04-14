@@ -62,6 +62,7 @@ if not tonumber(arg[1]) then
     print("Fuels a collection of Botania Endoflame flowers.")
     print("Usage:")
     print("  dropEndoflameFuel <count>")
+    return
 end
 
 while true do
