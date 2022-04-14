@@ -21,7 +21,7 @@ local function selectFuelItem()
     local detail = turtle.getItemDetail()
     if detail then
         if fuelItems[detail.name] then
-            return true
+            return detail.name
         end
     end
 
@@ -30,19 +30,21 @@ local function selectFuelItem()
         if detail then
             if fuelItems[detail.name] then
                 turtle.select(i)
-                return true
+                return detail.name
             end
         end
     end
 
-    return false
+    return nil
 end
 
 local function compressInventory()
     for dest = 1, 15, 1 do
         for source = dest + 1, 16, 1 do
-            turtle.select(source)
-            turtle.transferTo(dest)
+            if turtle.getItemCount(source) > 0 then
+                turtle.select(source)
+                turtle.transferTo(dest)
+            end
         end
     end
 end
