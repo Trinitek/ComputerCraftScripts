@@ -1,13 +1,15 @@
 
 -- Fuels a collection of Botania Endoflame flowers.
 
----Fuels and their burn times in seconds
+---Fuels and their furnace burn times in seconds.
+---To get the Endoflame burn time, divide the furnace time by 2.
 ---@type table<string, integer>
 local fuelItems = {
     ["quark:charcoal_block"] = 800,
     ["minecraft:coal_block"] = 800,
-    ["minecraft:charcoal"] = 64,
-    ["minecraft:coal"] = 64
+    ["minecraft:charcoal"] = 80,
+    ["minecraft:coal"] = 80,
+    ["minecraft:dried_kelp_block"] = 200
 }
 
 ---@param msg string
@@ -75,7 +77,7 @@ while true do
         log("Compressing inventory")
         compressInventory()
         item = selectFuelItem()
-        
+
         if turtle.getItemCount() < dropCount then
             log("Ran out of fuel items")
             return
@@ -86,7 +88,7 @@ while true do
     turtle.dropDown(dropCount)
     log("Dropped " .. dropCount .. " of " .. item)
 
-    local sleepTime = fuelItems[item]
+    local sleepTime = fuelItems[item] / 2
 
     log("Sleeping for " .. sleepTime .. " seconds")
     os.sleep(sleepTime)
