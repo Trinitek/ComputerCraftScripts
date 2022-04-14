@@ -88,7 +88,7 @@ while true do
     turtle.dropDown(dropCount)
     log("Dropped " .. dropCount .. " of " .. item)
 
-    local sleepTime = fuelItems[item] * 0.60 -- adjusting burn time. Doesn't seem to be exactly 1/2 the ticks
+    local sleepTime = fuelItems[item] * 0.5
 
     log("Sleeping for " .. sleepTime .. " seconds")
     os.sleep(sleepTime)
