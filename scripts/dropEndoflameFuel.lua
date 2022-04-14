@@ -40,7 +40,7 @@ end
 
 local function compressInventory()
     for dest = 1, 15, 1 do
-        for source = 2, 16, 1 do
+        for source = dest + 1, 16, 1 do
             turtle.select(source)
             turtle.transferTo(dest)
         end
