@@ -69,15 +69,19 @@ end
 
 while true do
 
-    log("Compressing inventory")
-    compressInventory()
-
     local item = selectFuelItem()
 
     if turtle.getItemCount() < dropCount then
-        log("Ran out of fuel items")
-        return
+        log("Compressing inventory")
+        compressInventory()
+        item = selectFuelItem()
+        
+        if turtle.getItemCount() < dropCount then
+            log("Ran out of fuel items")
+            return
+        end
     end
+
 
     turtle.dropDown(dropCount)
     log("Dropped " .. dropCount .. " of " .. item)
