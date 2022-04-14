@@ -81,12 +81,47 @@ turtle = {
     ---@return string|nil reason The reason the block was not placed.
     placeDown = function (text) end,
 
+    ---Drop the currently selected stack into the inventory in front of the turtle, or as an item into the world
+    ---if there is no inventory.
+    ---@param count? integer The number of items to drop. If not given, the entire stack will be dropped.
+    ---@return boolean successful
+    ---@return string|nil errorReason The reason no items were dropped
+    ---Throws if an invalid count is given.
     drop = function (count) end,
+
+    ---Drop the currently selected stack into the inventory above the turtle, or as an item into the world
+    ---if there is no inventory.
+    ---@param count? integer The number of items to drop. If not given, the entire stack will be dropped.
+    ---@return boolean successful
+    ---@return string|nil errorReason The reason no items were dropped
+    ---Throws if an invalid count is given.
     dropUp = function (count) end,
+
+    ---Drop the currently selected stack into the inventory below the turtle, or as an item into the world
+    ---if there is no inventory.
+    ---@param count? integer The number of items to drop. If not given, the entire stack will be dropped.
+    ---@return boolean successful
+    ---@return string|nil errorReason The reason no items were dropped
+    ---Throws if an invalid count is given.
     dropDown = function (count) end,
 
+    ---Change the currently selected slot.
+    ---@param slot integer The slot to select. Must be between [1..16].
+    ---@return boolean successful
+    ---Throws if the slot is out of range.
     select = function (slot) end,
+
+    ---Get the number of items in the given slot.
+    ---@param slot? integer The slot to check, or the currently selected slot if not provided. Must be between [1..16].
+    ---@return integer count
+    ---Throws if the slot is out of range.
     getItemCount = function (slot) end,
+
+    ---Get the remaining number of items which may be stored in this stack.
+    ---For example a stack of 13 blocks of dirt can hold an additional 51 blocks.
+    ---@param slot? integer The slot to check, or the currently selected slot if not provided. Must be between [1..16].
+    ---@return integer countRemaining
+    ---Throws if the slot is out of range.
     getItemSpace = function (slot) end,
 
     detect = function () end,
@@ -119,7 +154,17 @@ turtle = {
     ---Throws if the refuel count is out of range.
     refuel = function (count) end,
 
+    ---Compare the item in the currently selected slot to the item in another slot.
+    ---@param slot integer The slot to compare to. Must be between [1..16].
+    ---@return boolean areEqual
+    ---Throws if the slot is out of range.
     compareTo = function (slot) end,
+
+    ---Move an item from the selected slot to another one.
+    ---@param slot integer The slot to move this item into. Must be between [1..16].
+    ---@param count? integer The maximum number of items to move.
+    ---@return boolean successful True if at least some items were moved.
+    ---Throws if the slot is out of range or the number of items is out of range.
     transferTo = function (slot, count) end,
 
     ---Get the currently selected slot.
