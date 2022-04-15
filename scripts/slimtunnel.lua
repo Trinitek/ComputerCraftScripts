@@ -13,6 +13,10 @@ local ignoreBlocks = {
     ["biomesoplenty:porous_flesh"] = true
 }
 
+---Total of all lava seal blocks placed, both temporary and permanent along the walls.
+---@type integer
+local lavaSealsPlaced = 0
+
 ---Digs the block in front of the turtle including falling gravel and sand columns.
 local function ensureDigAhead()
     while (turtle.dig()) do
@@ -23,6 +27,12 @@ end
 local function ensureDigDown()
     while (turtle.digDown()) do
         turtle.suckDown()
+    end
+end
+
+local function ensureDigUp()
+    while (turtle.digUp()) do
+        turtle.suckUp()
     end
 end
 
@@ -83,9 +93,28 @@ local function selectFillerBlockOrWait()
     while (not selectFillerBlock()) do
         print("Ran out of filler blocks. Waiting for inventory...")
         os.pullEvent("turtle_inventory");
-        print("Detected inventory change.")
+        print("Detected inventory change. Resuming.")
     end
-    print("Resuming.")
+    return true
+end
+
+local function compressInventory()
+    for dest = 1, 15, 1 do
+        for source = dest + 1, 16, 1 do
+            if turtle.getItemCount(source) > 0 then
+                turtle.select(source)
+                turtle.transferTo(dest)
+            end
+        end
+    end
+end
+
+local function incrementSealBlockCount()
+    lavaSealsPlaced = lavaSealsPlaced + 1
+    if lavaSealsPlaced % 64 == 0 then
+        print("Compressing inventory")
+        compressInventory()
+    end
 end
 
 local function sealLava()
@@ -94,6 +123,7 @@ local function sealLava()
         if not placeResult then
             error(msg)
         end
+        incrementSealBlockCount()
     end
 end
 
@@ -103,6 +133,7 @@ local function sealLavaAbove()
         if not placeResult then
             error(msg)
         end
+        incrementSealBlockCount()
     end
 end
 
@@ -118,10 +149,12 @@ local length = tonumber(arg[1])
 
 for position = 0, length - 1, 1 do
 
+    ensureDigUp() -- break lava backflow stop if present, see below
     assertUp()
     ensureDigAhead()
     assertForward()
     sealLavaAbove()
+    sealLava() -- prevent lava backflow when going down
     turtle.turnLeft()
     sealLava()
     turtle.turnRight()
@@ -135,6 +168,9 @@ for position = 0, length - 1, 1 do
     sealLava()
     turtle.turnRight()
 
+    if position % 5 == 0 then
+        print("Traveled " .. position)
+    end
 end
 
 -- Seal lava at the end
