@@ -89,6 +89,7 @@ local function selectFillerBlock()
     return false
 end
 
+---@return boolean
 local function selectFillerBlockOrWait()
     while (not selectFillerBlock()) do
         print("Ran out of filler blocks. Waiting for inventory...")
@@ -154,7 +155,7 @@ for position = 0, length - 1, 1 do
     ensureDigAhead()
     assertForward()
     sealLavaAbove()
-    sealLava() -- prevent lava backflow when going down
+    sealLava() -- temp seal: prevent lava backflow when going down
     turtle.turnLeft()
     sealLava()
     turtle.turnRight()
@@ -164,12 +165,13 @@ for position = 0, length - 1, 1 do
     assertDown()
     sealLava()
     turtle.turnLeft()
+    sealLava() -- temp seal: prevent lava backflow on bottom when going up
     turtle.turnLeft()
     sealLava()
     turtle.turnRight()
 
     if position % 5 == 0 then
-        print("Traveled " .. position)
+        print("Travelled " .. position)
     end
 end
 
