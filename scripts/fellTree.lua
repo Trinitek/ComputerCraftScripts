@@ -46,6 +46,8 @@ repeat
 until not hasBlockAbove
 
 for i = height, 1, -1 do
+    turtle.digDown()
+    turtle.suckDown()
     turtle.down()
 end
 
