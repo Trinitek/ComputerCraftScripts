@@ -103,6 +103,16 @@ local function updateProgramPath()
     end
 end
 
+local function createStartupFile()
+    if not fs.exists("startup.lua") then
+        local startupFile = fs.open("startup.lua", "w")
+        startupFile.writeLine("local ccs = require('ccs-get')")
+        startupFile.writeLine("ccs.updateProgramPath()")
+        startupFile.close()
+        print("Created startup file")
+    end
+end
+
 ---@class GithubContent
 ---@field name string
 ---@field path string
@@ -188,7 +198,8 @@ if package.loaded["ccs-get"] then
     return {
         listContains = listContains,
         github = github,
-        enumerateContentListings = enumerateContentListings
+        enumerateContentListings = enumerateContentListings,
+        updateProgramPath = updateProgramPath
     }
 end
 
@@ -227,5 +238,7 @@ for _, v in pairs(enumerateContentListings(remoteScriptsContent.url)) do
 end
 
 updateProgramPath()
+
+createStartupFile()
 
 print("Done")
