@@ -111,10 +111,14 @@ local function goInspect()
     turtle.turnRight()
 end
 
-local function goDrill()
+---
+---@param holeDepth integer?
+local function goDrill(holeDepth)
     height = 0
 
-    while (goDown()) do
+    while (true) do
+        if holeDepth and -holeDepth <= height then break end
+        if not goDown() then break end
         goInspect()
         goInspect()
         goInspect()
@@ -277,21 +281,27 @@ if (tonumber(arg[1]) or 0) <= 0 or string.lower(arg[1]) == "help" or not tonumbe
     print("Drills a 1x1 shaft into the ground, mining ores along the walls.")
     print("Usage:")
     print("  " .. arg[0] .. " help  Shows help")
-    print("  " .. arg[0] .. " #     Number of holes to drill")
+    print("  " .. arg[0] .. " <h> [hd]     Number of holes to drill")
+    print("  h  - Number of holes to drill")
+    print("  hd - Hole depth, optional")
     return
 end
 
 local holesToDig = tonumber(arg[1])
 local tunnelsToDig = holesToDig - 1
+---@type integer?
+local holeDepth = math.floor(tonumber(arg[2]) or -1)
 
-log("Holes=" .. holesToDig .. ", Tunnels=" .. tunnelsToDig)
+if (holeDepth < 0) then holeDepth = nil end
+
+log("Holes=" .. holesToDig .. ", Tunnels=" .. tunnelsToDig .. ", Depth=" .. (holeDepth or "max"))
 log("Started")
 
-goDrill()
+goDrill(holeDepth)
 
 for i_tunnelsToDig = tunnelsToDig, 1, -1 do
     goTunnel()
-    goDrill()
+    goDrill(holeDepth)
 end
 
 log("Statistics:\n" .. textutils.serialize(foundBlocks))

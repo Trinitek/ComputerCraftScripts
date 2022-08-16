@@ -29,6 +29,7 @@ shell = {
     ---The path is composed of a list of directory names in a string, each separated by a colon (`:`).
     ---On normal turtles, this will look in the current directory (`.`), `/rom/programs`, and `/rom/programs/turtle` folders.
     ---This will form the path `.:/rom/programs:/rom/programs/turtle`.
+    ---@return string
     path = function () end,
 
     ---Set the current program path as returned by `shell.path()`.

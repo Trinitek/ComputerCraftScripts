@@ -203,7 +203,7 @@ fs = {
     ---Opens a file for reading or writing. When opening a file in write mode, any missing parent directories on the path will be created.
     ---@param path string The path to the file to open.
     ---@param mode CCFileMode The mode to open the file with.
-    ---@return CCFileReadHandle | CCFileWriteHandle | CCBinaryReadHandle | CCFileBinaryWriteHandle | nil handle A file handle, or nil if the file could not be opened.
+    ---@return CCFileReadHandle|CCFileWriteHandle|CCBinaryReadHandle|CCFileBinaryWriteHandle|nil handle A file handle, or nil if the file could not be opened.
     ---@return string|nil errorMessage A message explaining why the file cannot be opened.
     open = function (path, mode) end,
 
