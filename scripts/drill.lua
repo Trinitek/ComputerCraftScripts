@@ -280,8 +280,8 @@ end
 if (tonumber(arg[1]) or 0) <= 0 or string.lower(arg[1]) == "help" or not tonumber(arg[1]) then
     print("Drills a 1x1 shaft into the ground, mining ores along the walls.")
     print("Usage:")
-    print("  " .. arg[0] .. " help  Shows help")
-    print("  " .. arg[0] .. " <h> [hd]     Number of holes to drill")
+    print("  " .. arg[0] .. " help     Shows help")
+    print("  " .. arg[0] .. " <h> [hd] Number of holes to drill")
     print("  h  - Number of holes to drill")
     print("  hd - Hole depth, optional")
     return
