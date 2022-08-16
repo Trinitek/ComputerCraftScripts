@@ -117,7 +117,7 @@ local function goDrill(holeDepth)
     height = 0
 
     while (true) do
-        if holeDepth and -holeDepth <= height then break end
+        if holeDepth and height <= -holeDepth then break end
         if not goDown() then break end
         goInspect()
         goInspect()
