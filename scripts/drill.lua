@@ -26,6 +26,9 @@ local IGNOREBLOCKS_OVERWORLD = {
     ["create:crimsite"] = true,
     ["create:limestone"] = true,
     ["biomesoplenty:mud"] = true,
+    ["biomesoplenty:glowing_moss_block"] = true,
+    ["biomesoplenty:glowing_moss_carpet"] = true,
+    ["biomesoplenty:glowshroom"] = true,
 }
 
 local ignoreBlocks = { }
