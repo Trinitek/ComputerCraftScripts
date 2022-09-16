@@ -25,6 +25,7 @@ local IGNOREBLOCKS_OVERWORLD = {
     ["create:asurine"] = true,
     ["create:crimsite"] = true,
     ["create:limestone"] = true,
+    ["biomesoplenty:mud"] = true,
 }
 
 local ignoreBlocks = { }
