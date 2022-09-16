@@ -23,6 +23,8 @@ local IGNOREBLOCKS_OVERWORLD = {
     ["minecraft:dirt"] = true,
     ["minecraft:tuff"] = true,
     ["create:asurine"] = true,
+    ["create:crimsite"] = true,
+    ["create:limestone"] = true,
 }
 
 local ignoreBlocks = { }
