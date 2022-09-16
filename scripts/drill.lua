@@ -21,6 +21,8 @@ local IGNOREBLOCKS_OVERWORLD = {
     ["minecraft:calcite"] = true,
     ["minecraft:granite"] = true,
     ["minecraft:dirt"] = true,
+    ["minecraft:tuff"] = true,
+    ["create:asurine"] = true,
 }
 
 local ignoreBlocks = { }
