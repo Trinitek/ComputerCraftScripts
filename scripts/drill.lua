@@ -1,7 +1,7 @@
 
 --
 
-local ignoreBlocks = {
+local IGNOREBLOCKS_NETHER = {
     ["minecraft:blackstone"] = true,
     ["minecraft:netherrack"] = true,
     ["minecraft:nether_bricks"] = true,
@@ -10,6 +10,20 @@ local ignoreBlocks = {
     ["biomesoplenty:brimstone"] = true,
     ["minecraft:magma_block"] = true
 }
+
+local IGNOREBLOCKS_OVERWORLD = {
+    ["minecraft:stone"] = true,
+    ["minecraft:cobblestone"] = true,
+    ["minecraft:deepslate"] = true,
+    ["minecraft:cobbled_deepslate"] = true,
+    ["minecraft:andesite"] = true,
+    ["minecraft:diorite"] = true,
+    ["minecraft:calcite"] = true,
+    ["minecraft:granite"] = true,
+    ["minecraft:dirt"] = true,
+}
+
+local ignoreBlocks = { }
 
 local foundBlocks = { }
 
@@ -277,24 +291,44 @@ local function goTunnel()
     -- Positioned and ready for next drill and tunnel.
 end
 
-if (tonumber(arg[1]) or 0) <= 0 or string.lower(arg[1]) == "help" or not tonumber(arg[1]) then
+local ARG_H = arg[1]
+local ARG_D = arg[2]
+local ARG_HD = arg[3]
+
+if (tonumber(ARG_H) or 0) <= 0 or string.lower(ARG_H) == "help" or not tonumber(ARG_H) then
     print("Drills a 1x1 shaft into the ground, mining ores along the walls.")
     print("Usage:")
     print("  " .. arg[0] .. " help     Shows help")
-    print("  " .. arg[0] .. " <h> [hd] Number of holes to drill")
+    print("  " .. arg[0] .. " <h> <d> [hd]")
     print("  h  - Number of holes to drill")
+    print("  d  - Dimension; determines which blocks to ignore")
+    print("       o = Overworld, n = Nether")
     print("  hd - Hole depth, optional")
     return
 end
 
-local holesToDig = tonumber(arg[1])
+local holesToDig = tonumber(ARG_H)
 local tunnelsToDig = holesToDig - 1
 ---@type integer?
-local holeDepth = math.floor(tonumber(arg[2]) or -1)
+local holeDepth = math.floor(tonumber(ARG_HD) or -1)
+
+local dimLower = string.lower(ARG_D);
+local dimFriendlyName = ""
+if (dimLower == "o") then
+    ignoreBlocks = IGNOREBLOCKS_OVERWORLD
+    dimFriendlyName = "Overworld"
+elseif (dimLower == "n") then
+    ignoreBlocks = IGNOREBLOCKS_NETHER
+    dimFriendlyName = "Nether"
+else
+    print("Unknown dimension code '" .. ARG_D .. "'")
+    return
+end
 
 if (holeDepth < 0) then holeDepth = nil end
 
 log("Holes=" .. holesToDig .. ", Tunnels=" .. tunnelsToDig .. ", Depth=" .. (holeDepth or "max"))
+log("Dimension=" .. dimFriendlyName)
 log("Started")
 
 goDrill(holeDepth)
