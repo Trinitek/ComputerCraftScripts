@@ -29,6 +29,7 @@ local IGNOREBLOCKS_OVERWORLD = {
     ["biomesoplenty:glowing_moss_block"] = true,
     ["biomesoplenty:glowing_moss_carpet"] = true,
     ["biomesoplenty:glowshroom"] = true,
+    ["biomesoplenty:glowworm_silk"] = true,
 }
 
 local ignoreBlocks = { }
