@@ -157,7 +157,7 @@ end
 ---@return boolean successful
 ---@return string? failureReason
 function Position:down()
-    local successful, failureReason = turtle.up()
+    local successful, failureReason = turtle.down()
     if successful then
         self.vector.y = self.vector.y - 1
     end
