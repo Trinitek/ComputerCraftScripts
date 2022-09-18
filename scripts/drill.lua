@@ -1,6 +1,8 @@
 
 --
 
+require("libs.position")
+
 local IGNOREBLOCKS_NETHER = {
     ["minecraft:blackstone"] = true,
     ["minecraft:netherrack"] = true,
@@ -36,7 +38,7 @@ local ignoreBlocks = { }
 
 local foundBlocks = { }
 
-local height = 0
+local turtlePos = Position:new(Vector:new(0, 0, 0), "north");
 
 ---Logs to standard output.
 ---@param msg any The message to log.
@@ -51,7 +53,7 @@ end
 ---Tries to navigate down, breaking blocks in its way.
 ---@return boolean successful False if there is a non-breakable block preventing movement.
 local function goDown()
-    if not turtle.down() then
+    if not turtlePos:down() then
         local blockPresent, details = turtle.inspectDown()
         if (blockPresent) then
             incrementStatistic(details.name)
@@ -60,14 +62,9 @@ local function goDown()
         turtle.digDown()
         turtle.suckDown()
 
-        if turtle.down() then
-            height = height - 1
-            return true
-        else
-            return false
-        end
+        local successful = turtlePos:down()
+        return successful
     else
-        height = height - 1
         return true
     end
 end
@@ -89,7 +86,7 @@ local function selectFillerBlock()
             return true
         end
     end
-    
+
     for i = 1, 16, 1 do
         local detail = turtle.getItemDetail(i)
         if detail then
@@ -118,11 +115,6 @@ local function goInspect()
     local blockPresent, detail = turtle.inspect()
     if blockPresent then
         incrementStatistic(detail.name)
-        --if detail.name == "minecraft:lava" then
-        --    if selectFillerBlock() then
-        --        turtle.place()
-        --    end
-        --elseif ignoreBlocks[detail.name] == nil then
         if ignoreBlocks[detail.name] == nil then
             turtle.dig()
             turtle.suck()
@@ -131,25 +123,25 @@ local function goInspect()
         incrementStatistic("air")
     end
 
-    turtle.turnRight()
+    turtlePos:turnRight()
 end
 
 ---
 ---@param holeDepth integer?
 local function goDrill(holeDepth)
-    height = 0
+    --height = 0
 
     while (true) do
-        if holeDepth and height <= -holeDepth then break end
+        if holeDepth and turtlePos.vector.y <= -holeDepth then break end
         if not goDown() then break end
         goInspect()
         goInspect()
         goInspect()
         goInspect()
     end
-    
-    for i = height + 1, 0, 1 do
-        turtle.up()
+
+    for i = turtlePos.vector.y + 1, 0, 1 do
+        turtlePos:up()
     end
 end
 
@@ -169,21 +161,21 @@ end
 
 ---Moves the turtle forward or throws an error.
 local function assertForward()
-    local moveResult, msg = turtle.forward()
+    local moveResult, msg = turtlePos:forward()
     if not moveResult then
         error(msg)
     end
 end
 
 local function assertUp()
-    local moveResult, msg = turtle.up()
+    local moveResult, msg = turtlePos:up()
     if not moveResult then
         error(msg)
     end
 end
 
 local function assertDown()
-    local moveResult, msg = turtle.down()
+    local moveResult, msg = turtlePos:down()
     if not moveResult then
         error(msg)
     end
@@ -218,35 +210,35 @@ local function goTunnel()
     ensureDigAhead()
     assertForward()
     -- 1 bottom forward
-    
-    turtle.turnLeft()
+
+    turtlePos:turnLeft()
     sealLava()
     -- 1 bottom left
-    
-    turtle.turnRight()
-    turtle.turnRight()
+
+    turtlePos:turnRight()
+    turtlePos:turnRight()
     sealLava()
     -- 1 bottom right
-    
+
     ensureDigUp()
     assertUp()
     sealLavaAbove()
     sealLava()
     -- 1 top right
 
-    turtle.turnLeft()
-    turtle.turnLeft()
+    turtlePos:turnLeft()
+    turtlePos:turnLeft()
     sealLava()
     -- 1 top left
 
-    turtle.turnRight()
+    turtlePos:turnRight()
     ensureDigAhead()
     assertForward()
     sealLavaAbove()
     sealLava()
     -- 2 top forward
 
-    turtle.turnRight()
+    turtlePos:turnRight()
     sealLava()
     -- 2 top right
 
@@ -256,11 +248,11 @@ local function goTunnel()
     sealLava()
     -- 2 bottom right
 
-    turtle.turnLeft()
+    turtlePos:turnLeft()
     sealLava()
     -- 2 bottom forward
 
-    turtle.turnLeft()
+    turtlePos:turnLeft()
     -- 2 bottom left
 
     -- Turning corner now
@@ -271,12 +263,12 @@ local function goTunnel()
     sealLava()
     -- 3 bottom forward
 
-    turtle.turnRight()
+    turtlePos:turnRight()
     sealLava()
     -- 3 bottom right
 
-    turtle.turnLeft()
-    turtle.turnLeft()
+    turtlePos:turnLeft()
+    turtlePos:turnLeft()
     sealLava()
     -- 3 bottom left
 
@@ -286,11 +278,11 @@ local function goTunnel()
     sealLava()
     -- 3 top right
 
-    turtle.turnRight()
+    turtlePos:turnRight()
     sealLava()
     -- 3 top forward
 
-    turtle.turnRight()
+    turtlePos:turnRight()
     sealLava()
     -- 3 top left
 
