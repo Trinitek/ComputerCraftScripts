@@ -114,8 +114,8 @@ local facingLookup = {
     ["west"] = 3
 }
 
----@param point3d Point3D
----@param facing Facing
+---@param point3d? Point3D The origin point. Defaults to (0,0,0) if nil.
+---@param facing? Facing The direction the turtle is facing. Defaults to "north" if nil.
 ---@return Position
 function Position:new(point3d, facing)
     ---@type Position
@@ -123,8 +123,8 @@ function Position:new(point3d, facing)
     setmetatable(o, self);
     self.__index = self;
 
-    o.point3d = point3d;
-    o.facing = facing;
+    o.point3d = point3d or Point3D:new(0,0,0);
+    o.facing = facing or "north";
 
     return o;
 end
@@ -332,5 +332,26 @@ function PositionHistory:navigate(toIndex)
 
     go(deltaFromCurrent:getReverse());
 
-    -- TODO
+    ---@type integer
+    local step;
+    if (self.index < toIndex) then step = 1
+    elseif (step.index > toIndex) then step = -1
+    else return end
+
+    for i=self.index, toIndex, step do
+        ---@type PositionHistoryRecord
+        local current = self.stack[self.index];
+        ---@type PositionHistoryRecord
+        local next = self.stack[self.index + step];
+
+        local delta = current.point3d:getDelta1D(next.point3d);
+
+        if not delta then
+            error("Unexpected null delta between " .. self.index .. " and " .. self.index + step);
+        end
+
+        go(delta:getReverse());
+
+        self.index = self.index + step;
+    end
 end
