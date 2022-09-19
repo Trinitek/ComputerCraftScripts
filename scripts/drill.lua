@@ -38,7 +38,7 @@ local ignoreBlocks = { }
 
 local foundBlocks = { }
 
-local turtlePos = Position:new(Vector:new(0, 0, 0), "north");
+local turtlePos = Position:new(Point3D:new(0, 0, 0), "north");
 
 ---Logs to standard output.
 ---@param msg any The message to log.
@@ -132,7 +132,7 @@ local function goDrill(holeDepth)
     --height = 0
 
     while (true) do
-        if holeDepth and turtlePos.vector.y <= -holeDepth then break end
+        if holeDepth and turtlePos.point3d.y <= -holeDepth then break end
         if not goDown() then break end
         goInspect()
         goInspect()
@@ -140,7 +140,7 @@ local function goDrill(holeDepth)
         goInspect()
     end
 
-    for i = turtlePos.vector.y + 1, 0, 1 do
+    for i = turtlePos.point3d.y + 1, 0, 1 do
         turtlePos:up()
     end
 end

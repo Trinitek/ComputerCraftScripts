@@ -1,17 +1,18 @@
 
----@class Vector
+---@alias Facing "north"|"south"|"east"|"west"
+
+---@class Point3D
 ---@field x integer Increments going north, decrements going south
 ---@field y integer Increments going up, decrements going down
 ---@field z integer Increments going east, decrements going west
-Vector = {
-}
+Point3D = { }
 
 ---@param x integer
 ---@param y integer
 ---@param z integer
----@return Vector
-function Vector:new(x, y, z)
-    ---@type Vector
+---@return Point3D
+function Point3D:new(x, y, z)
+    ---@type Point3D
     local o = { }
     setmetatable(o, self)
     self.__index = self
@@ -23,10 +24,84 @@ function Vector:new(x, y, z)
     return o
 end
 
----@alias Facing "north"|"south"|"east"|"west"
+---Gets a value copy of the current instance.
+---@return Point3D
+function Point3D:copy()
+    return Point3D:new(self.x, self.y, self.z);
+end
+
+---Gets the one-dimensional difference between the current position and the
+---given previous position. If the two differ on more than one axis, the result is nil.
+---@param previous Point3D
+---@return Point3DDelta1D?
+function Point3D:getDelta1D(previous)
+    local dx = self.x - previous.x;
+    local dy = self.y - previous.y;
+    local dz = self.z - previous.z;
+
+    if (dx ~= 0 and dy ~= 0) or (dx ~= 0 and dz ~= 0) or (dy ~= 0 and dz ~= 0) then
+        return nil;
+    end
+
+    if (dx ~= 0) then return Point3DDelta1D:new("x", dx);
+    elseif (dy ~= 0) then return Point3DDelta1D:new("y", dy);
+    elseif (dz ~= 0) then return Point3DDelta1D:new("z", dz);
+    else return Point3DDelta1D("x", 0); end
+end
+
+---@alias Axis "x"|"y"|"z"
+
+---@class Point3DDelta1D
+---@field axis Axis
+---@field amount integer
+Point3DDelta1D = { }
+
+---@param axis Axis
+---@param amount integer
+function Point3DDelta1D:new(axis, amount)
+    ---@type Point3DDelta1D
+    local o = {
+        axis = axis,
+        amount = amount
+    }
+    setmetatable(o, self);
+    self.__index = self;
+
+    return o;
+end
+
+---Returns the facing of the direction of the delta, or nil if the difference
+---is in the Y axis.
+---@return Facing?
+function Point3DDelta1D:getFacing()
+    if (self.axis == "x") then
+        if (self.amount >= 0) then return "north"
+        else return "south" end
+    elseif (self.axis == "z") then
+        if (self.amount >= 0) then return "east"
+        else return "west"
+        end
+    else
+        return nil
+    end
+end
+
+---Returns the magnitude of the movement in the direction of the facing as returned
+---by getFacing().
+---@return integer
+function Point3DDelta1D:getMagnitudeForFacing()
+    if (self.axis == "x") or (self.axis == "z") then return math.abs(self.amount)
+    else return self.amount
+    end
+end
+
+---@return Point3DDelta1D
+function Point3DDelta1D:getReverse()
+    return Point3DDelta1D:new(self.axis, self.amount * -1);
+end
 
 ---@class Position
----@field vector Vector
+---@field point3d Point3D
 ---@field facing Facing
 Position = {
 }
@@ -39,17 +114,17 @@ local facingLookup = {
     ["west"] = 3
 }
 
----@param vector Vector
+---@param point3d Point3D
 ---@param facing Facing
 ---@return Position
-function Position:new(vector, facing)
+function Position:new(point3d, facing)
     ---@type Position
-    local o = { }
-    setmetatable(o, self)
-    self.__index = self
+    local o = { };
+    setmetatable(o, self);
+    self.__index = self;
 
-    o.vector = vector
-    o.facing = facing
+    o.point3d = point3d;
+    o.facing = facing;
 
     return o;
 end
@@ -64,7 +139,7 @@ local function translateIntegerToFacing(iFacing)
         [3] = "west"
     }
 
-    return facingReverseLookup[iFacing % 4]
+    return facingReverseLookup[iFacing % 4];
 end
 
 function Position:turnLeft()
@@ -121,10 +196,10 @@ end
 function Position:forward()
     local successful, failureReason = turtle.forward()
     if successful then
-        if self.facing == "north" then self.vector.x = self.vector.x + 1
-        elseif self.facing == "south" then self.vector.x = self.vector.x - 1
-        elseif self.facing == "east" then self.vector.z = self.vector.z + 1
-        elseif self.facing == "west" then self.vector.z = self.vector.z - 1
+        if self.facing == "north" then self.point3d.x = self.point3d.x + 1
+        elseif self.facing == "south" then self.point3d.x = self.point3d.x - 1
+        elseif self.facing == "east" then self.point3d.z = self.point3d.z + 1
+        elseif self.facing == "west" then self.point3d.z = self.point3d.z - 1
         end
     end
     return successful, failureReason
@@ -135,10 +210,10 @@ end
 function Position:back()
     local successful, failureReason = turtle.back()
     if successful then
-        if self.facing == "north" then self.vector.x = self.vector.x - 1
-        elseif self.facing == "south" then self.vector.x = self.vector.x + 1
-        elseif self.facing == "east" then self.vector.z = self.vector.z - 1
-        elseif self.facing == "west" then self.vector.z = self.vector.z + 1
+        if self.facing == "north" then self.point3d.x = self.point3d.x - 1
+        elseif self.facing == "south" then self.point3d.x = self.point3d.x + 1
+        elseif self.facing == "east" then self.point3d.z = self.point3d.z - 1
+        elseif self.facing == "west" then self.point3d.z = self.point3d.z + 1
         end
     end
     return successful, failureReason
@@ -149,7 +224,7 @@ end
 function Position:up()
     local successful, failureReason = turtle.up()
     if successful then
-        self.vector.y = self.vector.y + 1
+        self.point3d.y = self.point3d.y + 1
     end
     return successful, failureReason
 end
@@ -159,9 +234,60 @@ end
 function Position:down()
     local successful, failureReason = turtle.down()
     if successful then
-        self.vector.y = self.vector.y - 1
+        self.point3d.y = self.point3d.y - 1
     end
     return successful, failureReason
 end
 
-return Position
+---@class PositionHistoryRecord
+---@field point3d Point3D
+PositionHistoryRecord = { }
+
+---@param point3d Point3D
+function PositionHistoryRecord:new(point3d)
+    ---@type PositionHistoryRecord
+    local o = { };
+    setmetatable(o, self);
+    self.__index = self;
+
+    o.point3d = point3d:copy();
+
+    return o;
+end
+
+---@class PositionHistory
+---@field currentPos Position
+---@field stack table<PositionHistoryRecord>
+---@field top integer
+---@field index integer
+PositionHistory = { }
+
+---@param position Position
+function PositionHistory:new(position)
+    ---@type PositionHistory
+    local o = { }
+    setmetatable(o, self)
+    self.__index = self
+
+    o.currentPos = position;
+    o.stack = { };
+    o.stack[1] = PositionHistoryRecord:new(position.point3d);
+    o.top = 1;
+    o.index = 1;
+
+    return o;
+end
+
+---Pushes the current position to the stack at the current index.
+---If there are existing positions above the current index, they are destroyed.
+---If the current and previous positions are different on more than one axis,
+---an exception is thrown.
+function PositionHistory:push()
+    if not self.currentPos.point3d:getDelta1D(self.stack[self.index].point3d) then
+        error("Cannot push current position: differs from previous in more than one axis.");
+    end
+
+    self.index = self.index + 1;
+    self.stack[self.index] = PositionHistoryRecord:new(self.currentPos.point3d);
+    self.top = self.index;
+end
