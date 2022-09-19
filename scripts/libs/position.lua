@@ -46,7 +46,7 @@ function Point3D:getDelta1D(previous)
     if (dx ~= 0) then return Point3DDelta1D:new("x", dx);
     elseif (dy ~= 0) then return Point3DDelta1D:new("y", dy);
     elseif (dz ~= 0) then return Point3DDelta1D:new("z", dz);
-    else return Point3DDelta1D("x", 0); end
+    else return Point3DDelta1D:new("x", 0); end
 end
 
 ---@alias Axis "x"|"y"|"z"
