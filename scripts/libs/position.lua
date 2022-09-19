@@ -338,7 +338,7 @@ function PositionHistory:navigate(toIndex)
     elseif (self.index > toIndex) then step = -1
     else return end
 
-    for i=self.index, toIndex, step do
+    while self.index ~= toIndex do
         ---@type PositionHistoryRecord
         local current = self.stack[self.index];
         ---@type PositionHistoryRecord
