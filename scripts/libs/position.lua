@@ -291,3 +291,46 @@ function PositionHistory:push()
     self.stack[self.index] = PositionHistoryRecord:new(self.currentPos.point3d);
     self.top = self.index;
 end
+
+---Navigates the turtle position backwards or forwards through the history.
+---@param toIndex integer
+function PositionHistory:navigate(toIndex)
+    if (toIndex < 1) or (toIndex > self.top) then
+        error("Cannot navigate to index less than 1 or greater than the top index.");
+    end
+
+    local deltaFromCurrent = self.currentPos.point3d:getDelta1D(self.stack[self.index].point3d);
+
+    if not deltaFromCurrent then
+        error("Current position and position at current index differ on more than one axis.");
+    end
+
+    ---@param delta Point3DDelta1D
+    local function go(delta)
+        local facing = delta:getFacing();
+        if facing then
+            self.currentPos:setFacing(facing);
+        end
+
+        if (delta.axis == "x") or (delta.axis == "z") then
+            for i=1, delta:getMagnitudeForFacing(), 1 do
+                self.currentPos:forward()
+            end
+        elseif (delta.axis == "y") then
+            local y = delta:getMagnitudeForFacing();
+            if (y >= 0) then
+                for i=1, y, 1 do
+                    self.currentPos:up();
+                end
+            else
+                for i=1, math.abs(y), 1 do
+                    self.currentPos:down();
+                end
+            end
+        end
+    end
+
+    go(deltaFromCurrent:getReverse());
+
+    -- TODO
+end
