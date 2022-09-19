@@ -335,7 +335,7 @@ function PositionHistory:navigate(toIndex)
     ---@type integer
     local step;
     if (self.index < toIndex) then step = 1
-    elseif (step.index > toIndex) then step = -1
+    elseif (self.index > toIndex) then step = -1
     else return end
 
     for i=self.index, toIndex, step do
