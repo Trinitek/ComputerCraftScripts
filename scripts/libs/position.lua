@@ -344,6 +344,8 @@ function PositionHistory:navigate(toIndex)
         ---@type PositionHistoryRecord
         local next = self.stack[self.index + step];
 
+        if not next then break end
+
         local delta = current.point3d:getDelta1D(next.point3d);
 
         if not delta then
