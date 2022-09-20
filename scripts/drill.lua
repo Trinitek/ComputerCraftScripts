@@ -363,7 +363,7 @@ end
 if (holeDepth < 0) then holeDepth = nil end
 
 log("Holes=" .. holesToDig .. ", Tunnels=" .. tunnelsToDig .. ", Depth=" .. (holeDepth or "max"));
-log("Dim=" .. dimFriendlyName .. ", Chest=" .. depositChest);
+log("Dim=" .. dimFriendlyName .. ", Chest=" .. tostring(depositChest));
 log("Started");
 
 -- positionHistory:push(); -- not needed because we're already at origin
