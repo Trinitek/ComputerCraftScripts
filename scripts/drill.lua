@@ -39,11 +39,19 @@ local ignoreBlocks = { }
 local foundBlocks = { }
 
 local entity = MovingEntity:newFromTurtle();
+local positionHistory = PositionHistory:new(entity);
 
 ---Logs to standard output.
 ---@param msg any The message to log.
 local function log(msg)
     print(msg)
+end
+
+local function depositItems()
+    for i=1, 16, 1 do
+        turtle.select(i);
+        turtle.drop();
+    end
 end
 
 local function incrementStatistic(key)
@@ -255,6 +263,8 @@ local function goTunnel()
     entity:turnLeft()
     -- 2 bottom left
 
+    positionHistory:push(); -- push history at corner
+
     -- Turning corner now
     -- "Forward, left, right" are now relative to the turn, not starting orientation
 
@@ -290,53 +300,88 @@ local function goTunnel()
     -- 3 bottom left
 
     -- Positioned and ready for next drill and tunnel.
+
+    positionHistory:push(); -- push history at next drill position
 end
 
 local ARG_H = arg[1]
 local ARG_D = arg[2]
-local ARG_HD = arg[3]
+local ARG_C = arg[3]
+local ARG_HD = arg[4]
 
 if (tonumber(ARG_H) or 0) <= 0 or string.lower(ARG_H) == "help" or not tonumber(ARG_H) then
     print("Drills a 1x1 shaft into the ground, mining ores along the walls.")
     print("Usage:")
     print("  " .. arg[0] .. " help     Shows help")
-    print("  " .. arg[0] .. " <h> <d> [hd]")
+    print("  " .. arg[0] .. " <h> <d> <c> [hd]")
     print("  h  - Number of holes to drill")
-    print("  d  - Dimension; determines which blocks to ignore")
+    print("  d  - Dimension (ignore blocks)")
     print("       o = Overworld, n = Nether")
+    print("  c  - Deposit into chest at origin?")
+    print("       cy = Yes, cn = No")
     print("  hd - Hole depth, optional")
     return
 end
 
-local holesToDig = tonumber(ARG_H)
-local tunnelsToDig = holesToDig - 1
+local holesToDig = tonumber(ARG_H);
+local tunnelsToDig = holesToDig - 1;
 ---@type integer?
-local holeDepth = math.floor(tonumber(ARG_HD) or -1)
+local holeDepth = math.floor(tonumber(ARG_HD) or -1);
 
 local dimLower = string.lower(ARG_D);
-local dimFriendlyName = ""
+local dimFriendlyName = "";
 if (dimLower == "o") then
-    ignoreBlocks = IGNOREBLOCKS_OVERWORLD
-    dimFriendlyName = "Overworld"
+    ignoreBlocks = IGNOREBLOCKS_OVERWORLD;
+    dimFriendlyName = "Overworld";
 elseif (dimLower == "n") then
-    ignoreBlocks = IGNOREBLOCKS_NETHER
-    dimFriendlyName = "Nether"
+    ignoreBlocks = IGNOREBLOCKS_NETHER;
+    dimFriendlyName = "Nether";
 else
-    print("Unknown dimension code '" .. ARG_D .. "'")
-    return
+    print("Unknown dimension code '" .. ARG_D .. "'");
+    return;
+end
+
+---@type boolean
+local depositChest;
+local depositChestsLower = string.lower(ARG_C);
+if (depositChestsLower == "cy") then
+    depositChest = true;
+elseif (depositChestsLower == "cn") then
+    depositChest = false;
+else
+    print("Unexpected argument for <c>: '" .. ARG_C .. "'");
+    return;
 end
 
 if (holeDepth < 0) then holeDepth = nil end
 
-log("Holes=" .. holesToDig .. ", Tunnels=" .. tunnelsToDig .. ", Depth=" .. (holeDepth or "max"))
-log("Dimension=" .. dimFriendlyName)
-log("Started")
+log("Holes=" .. holesToDig .. ", Tunnels=" .. tunnelsToDig .. ", Depth=" .. (holeDepth or "max"));
+log("Dim=" .. dimFriendlyName .. ", Chest=" .. depositChest);
+log("Started");
+
+-- positionHistory:push(); -- not needed because we're already at origin
 
 goDrill(holeDepth)
 
-for i_tunnelsToDig = tunnelsToDig, 1, -1 do
-    goTunnel()
-    goDrill(holeDepth)
+if (tunnelsToDig < 1) and (depositChest) then
+    entity:turnToFacing("south");
+    depositItems();
+    entity:turnToFacing("north");
 end
 
-log("Statistics:\n" .. textutils.serialize(foundBlocks))
+for i_tunnelsToDig = tunnelsToDig, 1, -1 do
+    goTunnel();
+
+    if (depositChest) then
+        -- After tunneling, return to chest to deposit items
+        positionHistory:navigate(1);
+        entity:turnToFacing("south"); -- not needed but just to be 100% sure
+        depositItems();
+        positionHistory:navigate(positionHistory.top);
+        entity:turnToFacing("north");
+    end
+
+    goDrill(holeDepth);
+end
+
+log("Statistics:\n" .. textutils.serialize(foundBlocks));

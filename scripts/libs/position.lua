@@ -274,15 +274,16 @@ function PositionHistory:getCurrentPosition()
     return self.entity.position;
 end
 
----Pushes the current position to the stack at the current index.
+---Pushes the given position (or the current position if nil) to the stack at the current index.
 ---If there are existing positions above the current index, they are destroyed.
 ---If the current and previous positions are different on more than one axis,
 ---an exception is thrown.
-function PositionHistory:push()
-    local currentPosition = self:getCurrentPosition();
+---@param position Position? The position to push or nil to use the current entity position.
+function PositionHistory:push(position)
+    local currentPosition = position or self:getCurrentPosition();
 
     if not currentPosition.point3d:getDelta1D(self.stack[self.index].point3d) then
-        error("Cannot push current position: differs from previous in more than one axis.");
+        error("Cannot push position: differs from previous in more than one axis.");
     end
 
     self.index = self.index + 1;
