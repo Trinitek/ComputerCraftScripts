@@ -391,4 +391,12 @@ for i_tunnelsToDig = tunnelsToDig, 1, -1 do
     goDrill(holeDepth);
 end
 
+if (depositChest) then
+    -- Final deposit of items
+    positionHistory:navigate(1);
+    entity:turnToFacing("south");
+    depositChest();
+    entity:turnToFacing("north");
+end
+
 log("Statistics:\n" .. textutils.serialize(foundBlocks));
