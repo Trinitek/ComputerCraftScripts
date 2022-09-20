@@ -351,7 +351,7 @@ end
 local oldLockfile = readLockfile();
 
 if oldLockfile.latestCommitSha then
-    printColor("Local version: " .. shortHash(oldLockfile.latestCommitSha) .. " at " .. oldLockfile.latestCommitDate, colors.yellow);
+    print("Local version: " .. shortHash(oldLockfile.latestCommitSha) .. " at " .. oldLockfile.latestCommitDate);
 end
 
 if oldLockfile.latestCommitSha ~= latestCommit.sha then
