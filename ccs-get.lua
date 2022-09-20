@@ -270,6 +270,9 @@ local function findRemoteScriptsDirectory()
     return nil
 end
 
+local function printColor(message, color)
+end
+
 -- If loaded with `require`, expose some functions but do not execute main section.
 if package.loaded["ccs-get"] then
     return {
