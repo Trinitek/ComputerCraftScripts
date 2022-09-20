@@ -349,12 +349,12 @@ else
 end
 
 ---@type boolean
-local depositChest;
+local shouldDepositChest;
 local depositChestsLower = string.lower(ARG_C);
 if (depositChestsLower == "cy") then
-    depositChest = true;
+    shouldDepositChest = true;
 elseif (depositChestsLower == "cn") then
-    depositChest = false;
+    shouldDepositChest = false;
 else
     print("Unexpected argument for <c>: '" .. ARG_C .. "'");
     return;
@@ -363,14 +363,14 @@ end
 if (holeDepth < 0) then holeDepth = nil end
 
 log("Holes=" .. holesToDig .. ", Tunnels=" .. tunnelsToDig .. ", Depth=" .. (holeDepth or "max"));
-log("Dim=" .. dimFriendlyName .. ", Chest=" .. tostring(depositChest));
+log("Dim=" .. dimFriendlyName .. ", Chest=" .. tostring(shouldDepositChest));
 log("Started");
 
 -- positionHistory:push(); -- not needed because we're already at origin
 
 goDrill(holeDepth)
 
-if (tunnelsToDig < 1) and (depositChest) then
+if (tunnelsToDig < 1) and (shouldDepositChest) then
     entity:turnToFacing("south");
     depositItems();
     entity:turnToFacing("north");
@@ -379,7 +379,7 @@ end
 for i_tunnelsToDig = tunnelsToDig, 1, -1 do
     goTunnel();
 
-    if (depositChest) then
+    if (shouldDepositChest) then
         -- After tunneling, return to chest to deposit items
         positionHistory:navigate(1);
         entity:turnToFacing("south"); -- not needed but just to be 100% sure
@@ -391,11 +391,11 @@ for i_tunnelsToDig = tunnelsToDig, 1, -1 do
     goDrill(holeDepth);
 end
 
-if (depositChest) then
+if (shouldDepositChest) then
     -- Final deposit of items
     positionHistory:navigate(1);
     entity:turnToFacing("south");
-    depositChest();
+    depositItems();
     entity:turnToFacing("north");
 end
 
