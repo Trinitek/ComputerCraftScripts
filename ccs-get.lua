@@ -318,6 +318,8 @@ local function downloadAndUpdateContent()
     end
 end
 
+local function shortHash(hash) return string.sub(hash, 1, 7) end;
+
 -- If loaded with `require`, expose some functions but do not execute main section.
 if package.loaded["ccs-get"] then
     return {
@@ -348,15 +350,15 @@ end
 
 local oldLockfile = readLockfile();
 
+if oldLockfile.latestCommitSha then
+    printColor("Local version: " .. shortHash(oldLockfile.latestCommitSha) .. " at " .. oldLockfile.latestCommitDate, colors.yellow);
+end
+
 if oldLockfile.latestCommitSha ~= latestCommit.sha then
-    local function shortHash(hash) return string.sub(hash, 1, 7) end;
 
-    printColor("Updates available", colors.yellow);
+    printColor("Content updates available", colors.yellow);
 
-    if (oldLockfile.latestCommitSha) then
-        printColor("Old: " .. shortHash(oldLockfile.latestCommitSha) .. " at " .. oldLockfile.latestCommitDate, colors.yellow);
-    end
-    printColor("New: " .. shortHash(latestCommit.sha) .. " at " .. latestCommit.commit.author.date, colors.yellow);
+    printColor("Remote version: " .. shortHash(latestCommit.sha) .. " at " .. latestCommit.commit.author.date, colors.yellow);
 
     downloadAndUpdateContent();
 
@@ -368,7 +370,7 @@ if oldLockfile.latestCommitSha ~= latestCommit.sha then
 
     writeLockfile(newLockfile);
 else
-    print("No updates available")
+    print("No content updates available")
 end
 
 updateProgramPath();
