@@ -1,6 +1,6 @@
 
-require("point3d");
-local xassert = require("xassert");
+require("libs.point3d");
+local xassert = require("libs.xassert");
 
 ---@alias Facing "north"|"south"|"east"|"west"
 
