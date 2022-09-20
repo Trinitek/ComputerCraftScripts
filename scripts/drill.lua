@@ -211,6 +211,13 @@ local function goTunnel()
         end
     end
 
+    -- Dig plan:
+    --
+    -- ######
+    -- ##32##
+    -- ###1##
+    -- ###0##
+    --
     -- The following comments denote the turtle's position at that point
 
     -- 0 bottom forward
