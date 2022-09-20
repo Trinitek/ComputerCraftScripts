@@ -260,7 +260,7 @@ function PositionHistory:new(entity)
     setmetatable(o, self)
     self.__index = self
 
-    o.currentPos = entity;
+    o.entity = entity;
     o.stack = { };
     o.stack[1] = PositionHistoryRecord:new(entity.position.point3d);
     o.top = 1;
