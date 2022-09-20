@@ -21,7 +21,8 @@ local function printColor(message, color)
 end
 
 ---@class Lockfile
----@field latestCommit string?
+---@field latestCommitSha string?
+---@field latestCommitDate string?
 
 ---@return string
 local function getLockfilePath()
@@ -51,7 +52,7 @@ local function writeLockfile(lockfile)
     local lockfilePath = getLockfilePath();
     local lockfileWriteHandle --[[@as CCFileBinaryWriteHandle]], errorMessage = fs.open(lockfilePath, "wb");
     if not lockfileWriteHandle then
-        error("Couldn't open lockfile for writing: ".. errorMessage);
+        error("Couldn't open lockfile for writing: " .. errorMessage);
     end
 
     local lockfileSerialized = textutils.serializeJSON(lockfile, false);
@@ -165,8 +166,15 @@ end
 ---@field download_url string URL to the file's raw content.
 ---@field type '"file"'|'"dir"'|'"symlink"'|'"submodule"'
 
+---@class GithubCommitAuthor
+---@field date string
+
+---@class GithubCommitDetails
+---@field author GithubCommitAuthor
+
 ---@class GithubCommit
 ---@field sha string
+---@field commit GithubCommitDetails
 
 local github = {
     ---Gets file and directory content from a GitHub `contents` endpoint.
@@ -279,6 +287,37 @@ local function findRemoteScriptsDirectory()
     return nil
 end
 
+local function downloadAndUpdateContent()
+    local remoteScriptsContent = findRemoteScriptsDirectory()
+
+    if not remoteScriptsContent then
+        error("Could not find '" .. githubScriptsDirectory .. "' on remote")
+    else
+        print("Found content directory '" .. githubScriptsDirectory .. "' on remote")
+    end
+
+    for _, v in pairs(enumerateContentListings(remoteScriptsContent.url)) do
+        print("Fetching " .. v.githubContent.path)
+
+        local destFile --[[@as CCFileBinaryWriteHandle]], destFileError = fs.open(v.localPath, "wb")
+
+        if not destFile then
+            error("Could not open file " .. v.localPath .. ": " .. destFileError)
+        end
+
+        local remoteRequest, failReason = http.get(v.githubContent.download_url, nil, true)
+
+        if not remoteRequest then
+            error(failReason)
+        end
+
+        destFile.write(remoteRequest.readAll())
+
+        destFile.close()
+        remoteRequest.close()
+    end
+end
+
 -- If loaded with `require`, expose some functions but do not execute main section.
 if package.loaded["ccs-get"] then
     return {
@@ -301,37 +340,39 @@ end
 
 print("Using remote root '" .. githubContentRoot .. "'")
 
-local remoteScriptsContent = findRemoteScriptsDirectory()
+local latestCommit = github.getLatestCommit();
 
-if not remoteScriptsContent then
-    error("Could not find '" .. githubScriptsDirectory .. "' on remote")
+if not latestCommit then
+    error("Could not fetch latest commit from remote.");
+end
+
+local oldLockfile = readLockfile();
+
+if oldLockfile.latestCommitSha ~= latestCommit.sha then
+    local function shortHash(hash) return string.sub(hash, 1, 7) end;
+
+    printColor("Updates available", colors.yellow);
+
+    if (oldLockfile.latestCommitSha) then
+        printColor("Old: " .. shortHash(oldLockfile.latestCommitSha) .. " at " .. oldLockfile.latestCommitDate, colors.yellow);
+    end
+    printColor("New: " .. shortHash(latestCommit.sha) .. " at " .. latestCommit.commit.author.date, colors.yellow);
+
+    downloadAndUpdateContent();
+
+    ---@type Lockfile
+    local newLockfile = {
+        latestCommitSha = latestCommit.sha,
+        latestCommitDate = latestCommit.commit.author.date
+    };
+
+    writeLockfile(newLockfile);
 else
-    print("Found content directory '" .. githubScriptsDirectory .. "' on remote")
+    print("No updates available")
 end
 
-for _, v in pairs(enumerateContentListings(remoteScriptsContent.url)) do
-    print("Fetching " .. v.githubContent.path)
+updateProgramPath();
 
-    local destFile --[[@as CCFileBinaryWriteHandle]], destFileError = fs.open(v.localPath, "wb")
+createStartupFile();
 
-    if not destFile then
-        error("Could not open file " .. v.localPath .. ": " .. destFileError)
-    end
-
-    local remoteRequest, failReason = http.get(v.githubContent.download_url, nil, true)
-
-    if not remoteRequest then
-        error(failReason)
-    end
-
-    destFile.write(remoteRequest.readAll())
-
-    destFile.close()
-    remoteRequest.close()
-end
-
-updateProgramPath()
-
-createStartupFile()
-
-print("Done")
+print("Done");
