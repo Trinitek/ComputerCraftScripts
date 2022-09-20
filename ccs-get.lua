@@ -9,7 +9,7 @@ local updaterUrl = "https://raw.githubusercontent.com/Trinitek/ComputerCraftScri
 local githubContentRoot = "https://api.github.com/repos/Trinitek/ComputerCraftScripts/contents"
 local githubCommitsRoot = "https://api.github.com/repos/Trinitek/ComputerCraftScripts/commits?per_page=1"
 local githubScriptsDirectory = "scripts"
-local lockFileName = "ccs-get.lock"
+local lockFileName = ".ccs-get.lock"
 
 ---@param message any
 ---@param color number
@@ -274,8 +274,9 @@ local function enumerateContentListings(url)
     return contents
 end
 
+---@param commitHash string The full commit hash to fetch.
 ---@return GithubContent|nil
-local function findRemoteScriptsDirectory()
+local function findRemoteScriptsDirectory(commitHash)
     local rootListing = github.getContentListing();
 
     for _, v in pairs(rootListing) do
@@ -287,8 +288,9 @@ local function findRemoteScriptsDirectory()
     return nil
 end
 
-local function downloadAndUpdateContent()
-    local remoteScriptsContent = findRemoteScriptsDirectory()
+---@param commitHash string The full commit hash to fetch.
+local function downloadAndUpdateContent(commitHash)
+    local remoteScriptsContent = findRemoteScriptsDirectory(commitHash)
 
     if not remoteScriptsContent then
         error("Could not find '" .. githubScriptsDirectory .. "' on remote")
@@ -360,7 +362,7 @@ if oldLockfile.latestCommitSha ~= latestCommit.sha then
 
     printColor("Remote version: " .. shortHash(latestCommit.sha) .. " at " .. latestCommit.commit.author.date, colors.yellow);
 
-    downloadAndUpdateContent();
+    downloadAndUpdateContent(latestCommit.sha);
 
     ---@type Lockfile
     local newLockfile = {
