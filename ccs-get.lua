@@ -197,7 +197,7 @@ local github = {
     ---See https://docs.github.com/en/rest/commits/commits#list-commits
     ---A valid URL will look like `https://api.github.com/repos/{owner}/{repo}/commits`
     ---@param url? string Commit endpoint to fetch
-    ---@return GithubCommit
+    ---@return GithubCommit|nil
     getLatestCommit = function (url)
         local headers = {
             ["Accept"] = "application/vnd.github.v3+json"
@@ -277,7 +277,8 @@ if package.loaded["ccs-get"] then
         github = github,
         enumerateContentListings = enumerateContentListings,
         updateProgramPath = updateProgramPath,
-        readLockfile = readLockfile
+        readLockfile = readLockfile,
+        writeLockfile = writeLockfile
     }
 end
 
