@@ -2,6 +2,7 @@
 
 -- Arguments:
 -- -ssu   Suppress self-updater
+-- -f     Force content-update
 
 local updaterProgramName = "ccs-get"
 local ccsDirectory = "ccs"
@@ -289,7 +290,7 @@ local function findRemoteScriptsDirectory(commitHash)
 end
 
 ---@param commitHash string The full commit hash to fetch.
-local function downloadAndUpdateContent(commitHash)
+local function downloadAndWriteContentFiles(commitHash)
     local remoteScriptsContent = findRemoteScriptsDirectory(commitHash)
 
     if not remoteScriptsContent then
@@ -321,6 +322,21 @@ local function downloadAndUpdateContent(commitHash)
 end
 
 local function shortHash(hash) return string.sub(hash, 1, 7) end;
+
+---@param latestCommit GithubCommit
+local function updateContent(latestCommit)
+    printColor("Remote version: " .. shortHash(latestCommit.sha) .. " at " .. latestCommit.commit.author.date, colors.yellow);
+
+    downloadAndWriteContentFiles(latestCommit.sha);
+
+    ---@type Lockfile
+    local newLockfile = {
+        latestCommitSha = latestCommit.sha,
+        latestCommitDate = latestCommit.commit.author.date
+    };
+
+    writeLockfile(newLockfile);
+end
 
 -- If loaded with `require`, expose some functions but do not execute main section.
 if package.loaded["ccs-get"] then
@@ -356,21 +372,12 @@ if oldLockfile.latestCommitSha then
     print("Local version: " .. shortHash(oldLockfile.latestCommitSha) .. " at " .. oldLockfile.latestCommitDate);
 end
 
-if oldLockfile.latestCommitSha ~= latestCommit.sha then
-
+if (listContains(arg, "-f")) then
+    printColor("Forcing content update", colors.yellow);
+    updateContent(latestCommit);
+elseif (oldLockfile.latestCommitSha ~= latestCommit.sha) then
     printColor("Content updates available", colors.yellow);
-
-    printColor("Remote version: " .. shortHash(latestCommit.sha) .. " at " .. latestCommit.commit.author.date, colors.yellow);
-
-    downloadAndUpdateContent(latestCommit.sha);
-
-    ---@type Lockfile
-    local newLockfile = {
-        latestCommitSha = latestCommit.sha,
-        latestCommitDate = latestCommit.commit.author.date
-    };
-
-    writeLockfile(newLockfile);
+    updateContent(latestCommit);
 else
     print("No content updates available")
 end
