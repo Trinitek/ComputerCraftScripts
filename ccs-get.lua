@@ -110,7 +110,7 @@ local function checkForSelfUpdate()
         selfFileWrite.flush()
         selfFileWrite.close()
 
-        print("Updated " .. updaterProgramName .. " (" .. string.len(fetchedScriptContents) .. " chars)")
+        printColor("Updated " .. updaterProgramName .. " (" .. string.len(fetchedScriptContents) .. " chars)", colors.yellow)
 
         if not listContains(arg, "-ssu") then
             table.insert(arg, "-ssu")
@@ -120,7 +120,7 @@ local function checkForSelfUpdate()
 
         return true
     else
-        printColor("No updates available for " .. updaterProgramName, colors.yellow)
+        print("No updates available for " .. updaterProgramName)
         return false
     end
 end
