@@ -9,7 +9,7 @@ local updaterUrl = "https://raw.githubusercontent.com/Trinitek/ComputerCraftScri
 local githubContentRoot = "https://api.github.com/repos/Trinitek/ComputerCraftScripts/contents"
 local githubCommitsRoot = "https://api.github.com/repos/Trinitek/ComputerCraftScripts/commits?per_page=1"
 local githubScriptsDirectory = "scripts"
-local lockFileName = "css-get.lock"
+local lockFileName = "ccs-get.lock"
 
 ---@param message any
 ---@param color number
