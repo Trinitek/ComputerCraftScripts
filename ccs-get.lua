@@ -11,6 +11,15 @@ local githubCommitsRoot = "https://api.github.com/repos/Trinitek/ComputerCraftSc
 local githubScriptsDirectory = "scripts"
 local lockFileName = "css-get.lock"
 
+---@param message any
+---@param color number
+local function printColor(message, color)
+    local originalColor = term.getTextColor();
+    term.setTextColor(color);
+    print(message);
+    term.setTextColor(originalColor);
+end
+
 ---@class Lockfile
 ---@field latestCommit string?
 
@@ -111,7 +120,7 @@ local function checkForSelfUpdate()
 
         return true
     else
-        print("No updates available for " .. updaterProgramName)
+        printColor("No updates available for " .. updaterProgramName, colors.yellow)
         return false
     end
 end
@@ -268,9 +277,6 @@ local function findRemoteScriptsDirectory()
     end
 
     return nil
-end
-
-local function printColor(message, color)
 end
 
 -- If loaded with `require`, expose some functions but do not execute main section.
