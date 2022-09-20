@@ -7,7 +7,51 @@ local updaterProgramName = "ccs-get"
 local ccsDirectory = "ccs"
 local updaterUrl = "https://raw.githubusercontent.com/Trinitek/ComputerCraftScripts/master/ccs-get.lua"
 local githubContentRoot = "https://api.github.com/repos/Trinitek/ComputerCraftScripts/contents"
+local githubCommitsRoot = "https://api.github.com/repos/Trinitek/ComputerCraftScripts/commits?per_page=1"
 local githubScriptsDirectory = "scripts"
+local lockFileName = "css-get.lock"
+
+---@class Lockfile
+---@field latestCommit string?
+
+---@return string
+local function getLockfilePath()
+    return lockFileName;
+end
+
+---@return Lockfile
+local function readLockfile()
+    local lockfilePath = getLockfilePath();
+    local lockfileReadHandle --[[@as CCBinaryReadHandle]], errorMessage = fs.open(lockfilePath, "rb");
+    if not lockfileReadHandle then
+        return { };
+    end
+
+    local lockfileContents = lockfileReadHandle.readAll();
+    lockfileReadHandle.close();
+    if not lockfileContents then
+        return { };
+    end
+
+    local lockfileDeserialized = textutils.unserializeJSON(lockfileContents);
+    return lockfileDeserialized or { };
+end
+
+---@param lockfile Lockfile
+local function writeLockfile(lockfile)
+    local lockfilePath = getLockfilePath();
+    local lockfileWriteHandle --[[@as CCFileBinaryWriteHandle]], errorMessage = fs.open(lockfilePath, "wb");
+    if not lockfileWriteHandle then
+        error("Couldn't open lockfile for writing: ".. errorMessage);
+    end
+
+    local lockfileSerialized = textutils.serializeJSON(lockfile, false);
+
+    lockfileWriteHandle.write(lockfileSerialized);
+    lockfileWriteHandle.close();
+
+    print("Updated lockfile");
+end
 
 ---@return boolean
 local function listContains(list, x)
@@ -112,6 +156,9 @@ end
 ---@field download_url string URL to the file's raw content.
 ---@field type '"file"'|'"dir"'|'"symlink"'|'"submodule"'
 
+---@class GithubCommit
+---@field sha string
+
 local github = {
     ---Gets file and directory content from a GitHub `contents` endpoint.
     ---See https://docs.github.com/en/rest/reference/repos#get-repository-content.
@@ -144,6 +191,39 @@ local github = {
         end
 
         return deserialized
+    end,
+
+    ---Gets the latest commit from a GitHub `contents` endpoint.
+    ---See https://docs.github.com/en/rest/commits/commits#list-commits
+    ---A valid URL will look like `https://api.github.com/repos/{owner}/{repo}/commits`
+    ---@param url? string Commit endpoint to fetch
+    ---@return GithubCommit
+    getLatestCommit = function (url)
+        local headers = {
+            ["Accept"] = "application/vnd.github.v3+json"
+        }
+
+        url = url or githubCommitsRoot;
+
+        local response --[[@as CCHttpResponse]], failureReason = http.get(url, headers);
+
+        if not response then
+            error(failureReason);
+        end
+
+        local jsonResponse = response.readAll();
+
+        if not jsonResponse then
+            error("Unexpected null JSON response from API call.");
+        end
+
+        local deserialized --[[@as table<GithubCommit>]], deserializedErrorMessage = textutils.unserializeJSON(jsonResponse);
+
+        if not deserialized then
+            error(deserializedErrorMessage);
+        end
+
+        return deserialized[1];
     end
 }
 
@@ -196,7 +276,8 @@ if package.loaded["ccs-get"] then
         listContains = listContains,
         github = github,
         enumerateContentListings = enumerateContentListings,
-        updateProgramPath = updateProgramPath
+        updateProgramPath = updateProgramPath,
+        readLockfile = readLockfile
     }
 end
 

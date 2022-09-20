@@ -209,7 +209,7 @@ fs = {
 
     ---Returns the name of the mount on which the specified path is located.
     ---@param path string The path of which to get the drive.
-    ---@return string driveName The naem of the drive, like `"hdd"` for local files, or `"rom"` for ROM files.
+    ---@return string driveName The name of the drive, like `"hdd"` for local files, or `"rom"` for ROM files.
     ---Throws if the path doesn't exist.
     getDrive = function (path) end,
 
