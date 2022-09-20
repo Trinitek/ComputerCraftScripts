@@ -1,117 +1,186 @@
 
+require("point3d");
+local xassert = require("xassert");
+
 ---@alias Facing "north"|"south"|"east"|"west"
 
----@class Point3D
----@field x integer Increments going north, decrements going south
----@field y integer Increments going up, decrements going down
----@field z integer Increments going east, decrements going west
-Point3D = { }
+---@type table<Facing, integer>
+local FACING_LOOKUP = {
+    ["north"] = 0,
+    ["east"] = 1,
+    ["south"] = 2,
+    ["west"] = 3
+}
 
----@param x integer
----@param y integer
----@param z integer
----@return Point3D
-function Point3D:new(x, y, z)
-    ---@type Point3D
-    local o = { }
-    setmetatable(o, self)
-    self.__index = self
-
-    o.x = x
-    o.y = y
-    o.z = z
-
-    return o
-end
-
----Gets a value copy of the current instance.
----@return Point3D
-function Point3D:copy()
-    return Point3D:new(self.x, self.y, self.z);
-end
-
----Gets the one-dimensional difference between the current position and the
----given previous position. If the two differ on more than one axis, the result is nil.
----@param previous Point3D
----@return Point3DDelta1D?
-function Point3D:getDelta1D(previous)
-    local dx = self.x - previous.x;
-    local dy = self.y - previous.y;
-    local dz = self.z - previous.z;
-
-    if (dx ~= 0 and dy ~= 0) or (dx ~= 0 and dz ~= 0) or (dy ~= 0 and dz ~= 0) then
-        return nil;
-    end
-
-    if (dx ~= 0) then return Point3DDelta1D:new("x", dx);
-    elseif (dy ~= 0) then return Point3DDelta1D:new("y", dy);
-    elseif (dz ~= 0) then return Point3DDelta1D:new("z", dz);
-    else return Point3DDelta1D:new("x", 0); end
-end
-
----@alias Axis "x"|"y"|"z"
-
----@class Point3DDelta1D
----@field axis Axis
----@field amount integer
-Point3DDelta1D = { }
-
----@param axis Axis
----@param amount integer
-function Point3DDelta1D:new(axis, amount)
-    ---@type Point3DDelta1D
-    local o = {
-        axis = axis,
-        amount = amount
+---@param iFacing integer
+local function translateIntegerToFacing(iFacing)
+    ---@type table<integer, Facing>
+    local facingReverseLookup = {
+        [0] = "north",
+        [1] = "east",
+        [2] = "south",
+        [3] = "west"
     }
+
+    return facingReverseLookup[iFacing % 4];
+end
+
+---@class MovingEntity
+---@field position Position
+---@field p_fnForward fun(): boolean, string
+---@field p_fnBack fun(): boolean, string
+---@field p_fnUp fun(): boolean, string
+---@field p_fnDown fun(): boolean, string
+---@field p_fnTurnLeft fun(): boolean, string
+---@field p_fnTurnRight fun(): boolean, string
+MovingEntity = { }
+
+---@param position Position
+---@param fnForward fun(): boolean, string
+---@param fnBack fun(): boolean, string
+---@param fnUp fun(): boolean, string
+---@param fnDown fun(): boolean, string
+---@param fnTurnLeft fun(): boolean, string
+---@param fnTurnRight fun(): boolean, string
+function MovingEntity:new(position, fnForward, fnBack, fnUp, fnDown, fnTurnLeft, fnTurnRight)
+    ---@type MovingEntity
+    local o = {
+        position = xassert.paramType(position, "position", type(Position)),
+        p_fnForward = xassert.paramType(fnForward, "fnForward", xassert.Types.Function),
+        p_fnBack = xassert.paramType(fnBack, "fnBack", xassert.Types.Function),
+        p_fnUp = xassert.paramType(fnUp, "fnUp", xassert.Types.Function),
+        p_fnDown = xassert.paramType(fnDown, "fnDown", xassert.Types.Function),
+        p_fnTurnLeft = xassert.paramType(fnTurnLeft, "fnTurnLeft", xassert.Types.Function),
+        p_fnTurnRight = xassert.paramType(fnTurnRight, "fnTurnRight", xassert.Types.Function)
+    };
     setmetatable(o, self);
     self.__index = self;
-
     return o;
 end
 
----Returns the facing of the direction of the delta, or nil if the difference
----is in the Y axis.
----@return Facing?
-function Point3DDelta1D:getFacing()
-    if (self.axis == "x") then
-        if (self.amount >= 0) then return "north"
-        else return "south" end
-    elseif (self.axis == "z") then
-        if (self.amount >= 0) then return "east"
-        else return "west"
+---Constructs a new MovingEntity instance from the current turtle.
+---@param position Position? The origin position. Defaults to `(0,0,0),"north"` if nil.
+function MovingEntity:newFromTurtle(position)
+    return MovingEntity:new(
+        position or Position:new(),
+        turtle.forward,
+        turtle.back,
+        turtle.up,
+        turtle.down,
+        turtle.turnLeft,
+        turtle.turnRight);
+end
+
+---@return boolean successful
+---@return string? failureReason
+function MovingEntity:forward()
+    local successful, failureReason = self.p_fnForward();
+    if successful then
+        self.position:forward();
+    end
+    return successful, failureReason;
+end
+
+---@return boolean successful
+---@return string? failureReason
+function MovingEntity:back()
+    local successful, failureReason = self.p_fnBack();
+    if successful then
+        self.position:back();
+    end
+    return successful, failureReason;
+end
+
+---@return boolean successful
+---@return string? failureReason
+function MovingEntity:up()
+    local successful, failureReason = self.p_fnUp();
+    if successful then
+        self.position:up();
+    end
+    return successful, failureReason;
+end
+
+---@return boolean successful
+---@return string? failureReason
+function MovingEntity:down()
+    local successful, failureReason = self.p_fnDown();
+    if successful then
+        self.position:down();
+    end
+    return successful, failureReason;
+end
+
+---@return boolean successful
+---@return string? failureReason
+function MovingEntity:turnLeft()
+    local successful, failureReason = self.p_fnTurnLeft();
+    if successful then
+        self.position:turnLeft();
+    end
+    return successful, failureReason;
+end
+
+---@return boolean successful
+---@return string? failureReason
+function MovingEntity:turnRight()
+    local successful, failureReason = self.p_fnTurnRight();
+    if successful then
+        self.position:turnRight();
+    end
+    return successful, failureReason;
+end
+
+---@param facing Facing
+function MovingEntity:turnToFacing(facing)
+    local turns = FACING_LOOKUP[self.position.facing] - FACING_LOOKUP[facing]
+    -- -3   left 1
+    -- -2   left 2
+    -- -1   right 1
+    --  0   nothing
+    --  1   left 1
+    --  2   right 2
+    --  3   right 1
+
+    ---@param action fun(self: MovingEntity): boolean, string
+    local function assertTurn(action)
+        local successful, failureReason = action(self);
+        if not successful then
+            error("Unexpected exception when turning to facing: " .. failureReason);
         end
-    else
-        return nil
     end
-end
 
----Returns the magnitude of the movement in the direction of the facing as returned
----by getFacing().
----@return integer
-function Point3DDelta1D:getMagnitudeForFacing()
-    if (self.axis == "x") or (self.axis == "z") then return math.abs(self.amount)
-    else return self.amount
+    if turns == -3 then
+        assertTurn(self.turnLeft);
     end
-end
 
----@return Point3DDelta1D
-function Point3DDelta1D:getReverse()
-    return Point3DDelta1D:new(self.axis, self.amount * -1);
+    if turns == -2 then
+        assertTurn(self.turnLeft);
+        assertTurn(self.turnLeft);
+    end
+
+    if turns == -1 then
+        assertTurn(self.turnRight);
+    end
+
+    if turns == 1 then
+        assertTurn(self.turnLeft);
+    end
+
+    if turns == 2 then
+        assertTurn(self.turnRight);
+        assertTurn(self.turnRight);
+    end
+
+    if turns == 3 then
+        assertTurn(self.turnRight);
+    end
 end
 
 ---@class Position
 ---@field point3d Point3D
 ---@field facing Facing
 Position = {
-}
-
----@type table<Facing, integer>
-local facingLookup = {
-    ["north"] = 0,
-    ["east"] = 1,
-    ["south"] = 2,
-    ["west"] = 3
 }
 
 ---@param point3d? Point3D The origin point. Defaults to (0,0,0) if nil.
@@ -129,114 +198,36 @@ function Position:new(point3d, facing)
     return o;
 end
 
----@param iFacing integer
-local function translateIntegerToFacing(iFacing)
-    ---@type table<integer, Facing>
-    local facingReverseLookup = {
-        [0] = "north",
-        [1] = "east",
-        [2] = "south",
-        [3] = "west"
-    }
-
-    return facingReverseLookup[iFacing % 4];
-end
-
 function Position:turnLeft()
-    turtle.turnLeft();
-    self.facing = translateIntegerToFacing(facingLookup[self.facing] - 1);
+    self.facing = translateIntegerToFacing(FACING_LOOKUP[self.facing] - 1);
 end
 
 function Position:turnRight()
-    turtle.turnRight();
-    self.facing = translateIntegerToFacing(facingLookup[self.facing] + 1);
+    self.facing = translateIntegerToFacing(FACING_LOOKUP[self.facing] + 1);
 end
 
----Changes the direction the turtle is facing relative to the origin.
----@param facing Facing
-function Position:setFacing(facing)
-    local turns = facingLookup[self.facing] - facingLookup[facing]
-    -- -3   left 1
-    -- -2   left 2
-    -- -1   right 1
-    --  0   nothing
-    --  1   left 1
-    --  2   right 2
-    --  3   right 1
-
-    if turns == -3 then
-        self:turnLeft()
-    end
-
-    if turns == -2 then
-        self:turnLeft()
-        self:turnLeft()
-    end
-
-    if turns == -1 then
-        self:turnRight()
-    end
-
-    if turns == 1 then
-        self:turnLeft()
-    end
-
-    if turns == 2 then
-        self:turnRight()
-        self:turnRight()
-    end
-
-    if turns == 3 then
-        self:turnRight()
-    end
-end
-
----@return boolean successful
----@return string? failureReason
 function Position:forward()
-    local successful, failureReason = turtle.forward()
-    if successful then
-        if self.facing == "north" then self.point3d.x = self.point3d.x + 1
-        elseif self.facing == "south" then self.point3d.x = self.point3d.x - 1
-        elseif self.facing == "east" then self.point3d.z = self.point3d.z + 1
-        elseif self.facing == "west" then self.point3d.z = self.point3d.z - 1
-        end
+    if self.facing == "north" then self.point3d.x = self.point3d.x + 1
+    elseif self.facing == "south" then self.point3d.x = self.point3d.x - 1
+    elseif self.facing == "east" then self.point3d.z = self.point3d.z + 1
+    elseif self.facing == "west" then self.point3d.z = self.point3d.z - 1
     end
-    return successful, failureReason
 end
 
----@return boolean successful
----@return string? failureReason
 function Position:back()
-    local successful, failureReason = turtle.back()
-    if successful then
-        if self.facing == "north" then self.point3d.x = self.point3d.x - 1
-        elseif self.facing == "south" then self.point3d.x = self.point3d.x + 1
-        elseif self.facing == "east" then self.point3d.z = self.point3d.z - 1
-        elseif self.facing == "west" then self.point3d.z = self.point3d.z + 1
-        end
+    if self.facing == "north" then self.point3d.x = self.point3d.x - 1
+    elseif self.facing == "south" then self.point3d.x = self.point3d.x + 1
+    elseif self.facing == "east" then self.point3d.z = self.point3d.z - 1
+    elseif self.facing == "west" then self.point3d.z = self.point3d.z + 1
     end
-    return successful, failureReason
 end
 
----@return boolean successful
----@return string? failureReason
 function Position:up()
-    local successful, failureReason = turtle.up()
-    if successful then
-        self.point3d.y = self.point3d.y + 1
-    end
-    return successful, failureReason
+    self.point3d.y = self.point3d.y + 1
 end
 
----@return boolean successful
----@return string? failureReason
 function Position:down()
-    local successful, failureReason = turtle.down()
-    if successful then
-        self.point3d.y = self.point3d.y - 1
-    end
-    return successful, failureReason
+    self.point3d.y = self.point3d.y - 1;
 end
 
 ---@class PositionHistoryRecord
@@ -256,26 +247,31 @@ function PositionHistoryRecord:new(point3d)
 end
 
 ---@class PositionHistory
----@field currentPos Position
+---@field entity MovingEntity
 ---@field stack table<PositionHistoryRecord>
 ---@field top integer
 ---@field index integer
 PositionHistory = { }
 
----@param position Position
-function PositionHistory:new(position)
+---@param entity MovingEntity
+function PositionHistory:new(entity)
     ---@type PositionHistory
     local o = { }
     setmetatable(o, self)
     self.__index = self
 
-    o.currentPos = position;
+    o.currentPos = entity;
     o.stack = { };
-    o.stack[1] = PositionHistoryRecord:new(position.point3d);
+    o.stack[1] = PositionHistoryRecord:new(entity.position.point3d);
     o.top = 1;
     o.index = 1;
 
     return o;
+end
+
+---@return Position
+function PositionHistory:getCurrentPosition()
+    return self.entity.position;
 end
 
 ---Pushes the current position to the stack at the current index.
@@ -283,12 +279,14 @@ end
 ---If the current and previous positions are different on more than one axis,
 ---an exception is thrown.
 function PositionHistory:push()
-    if not self.currentPos.point3d:getDelta1D(self.stack[self.index].point3d) then
+    local currentPosition = self:getCurrentPosition();
+
+    if not currentPosition.point3d:getDelta1D(self.stack[self.index].point3d) then
         error("Cannot push current position: differs from previous in more than one axis.");
     end
 
     self.index = self.index + 1;
-    self.stack[self.index] = PositionHistoryRecord:new(self.currentPos.point3d);
+    self.stack[self.index] = PositionHistoryRecord:new(currentPosition.point3d);
     self.top = self.index;
 end
 
@@ -299,7 +297,7 @@ function PositionHistory:navigate(toIndex)
         error("Cannot navigate to index less than 1 or greater than the top index.");
     end
 
-    local deltaFromCurrent = self.currentPos.point3d:getDelta1D(self.stack[self.index].point3d);
+    local deltaFromCurrent = self:getCurrentPosition().point3d:getDelta1D(self.stack[self.index].point3d);
 
     if not deltaFromCurrent then
         error("Current position and position at current index differ on more than one axis.");
@@ -309,22 +307,22 @@ function PositionHistory:navigate(toIndex)
     local function go(delta)
         local facing = delta:getFacing();
         if facing then
-            self.currentPos:setFacing(facing);
+            self.entity:turnToFacing(facing);
         end
 
         if (delta.axis == "x") or (delta.axis == "z") then
             for i=1, delta:getMagnitudeForFacing(), 1 do
-                self.currentPos:forward()
+                self.entity:forward()
             end
         elseif (delta.axis == "y") then
             local y = delta:getMagnitudeForFacing();
             if (y >= 0) then
                 for i=1, y, 1 do
-                    self.currentPos:up();
+                    self.entity:up();
                 end
             else
                 for i=1, math.abs(y), 1 do
-                    self.currentPos:down();
+                    self.entity:down();
                 end
             end
         end

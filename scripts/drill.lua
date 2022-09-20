@@ -38,7 +38,7 @@ local ignoreBlocks = { }
 
 local foundBlocks = { }
 
-local turtlePos = Position:new(Point3D:new(0, 0, 0), "north");
+local entity = MovingEntity:newFromTurtle();
 
 ---Logs to standard output.
 ---@param msg any The message to log.
@@ -53,7 +53,7 @@ end
 ---Tries to navigate down, breaking blocks in its way.
 ---@return boolean successful False if there is a non-breakable block preventing movement.
 local function goDown()
-    if not turtlePos:down() then
+    if not entity:down() then
         local blockPresent, details = turtle.inspectDown()
         if (blockPresent) then
             incrementStatistic(details.name)
@@ -62,7 +62,7 @@ local function goDown()
         turtle.digDown()
         turtle.suckDown()
 
-        local successful = turtlePos:down()
+        local successful = entity:down()
         return successful
     else
         return true
@@ -123,7 +123,7 @@ local function goInspect()
         incrementStatistic("air")
     end
 
-    turtlePos:turnRight()
+    entity:turnRight()
 end
 
 ---
@@ -132,7 +132,7 @@ local function goDrill(holeDepth)
     --height = 0
 
     while (true) do
-        if holeDepth and turtlePos.point3d.y <= -holeDepth then break end
+        if holeDepth and entity.position.point3d.y <= -holeDepth then break end
         if not goDown() then break end
         goInspect()
         goInspect()
@@ -140,8 +140,8 @@ local function goDrill(holeDepth)
         goInspect()
     end
 
-    for i = turtlePos.point3d.y + 1, 0, 1 do
-        turtlePos:up()
+    for i = entity.position.point3d.y + 1, 0, 1 do
+        entity:up()
     end
 end
 
@@ -161,21 +161,21 @@ end
 
 ---Moves the turtle forward or throws an error.
 local function assertForward()
-    local moveResult, msg = turtlePos:forward()
+    local moveResult, msg = entity:forward()
     if not moveResult then
         error(msg)
     end
 end
 
 local function assertUp()
-    local moveResult, msg = turtlePos:up()
+    local moveResult, msg = entity:up()
     if not moveResult then
         error(msg)
     end
 end
 
 local function assertDown()
-    local moveResult, msg = turtlePos:down()
+    local moveResult, msg = entity:down()
     if not moveResult then
         error(msg)
     end
@@ -211,12 +211,12 @@ local function goTunnel()
     assertForward()
     -- 1 bottom forward
 
-    turtlePos:turnLeft()
+    entity:turnLeft()
     sealLava()
     -- 1 bottom left
 
-    turtlePos:turnRight()
-    turtlePos:turnRight()
+    entity:turnRight()
+    entity:turnRight()
     sealLava()
     -- 1 bottom right
 
@@ -226,19 +226,19 @@ local function goTunnel()
     sealLava()
     -- 1 top right
 
-    turtlePos:turnLeft()
-    turtlePos:turnLeft()
+    entity:turnLeft()
+    entity:turnLeft()
     sealLava()
     -- 1 top left
 
-    turtlePos:turnRight()
+    entity:turnRight()
     ensureDigAhead()
     assertForward()
     sealLavaAbove()
     sealLava()
     -- 2 top forward
 
-    turtlePos:turnRight()
+    entity:turnRight()
     sealLava()
     -- 2 top right
 
@@ -248,11 +248,11 @@ local function goTunnel()
     sealLava()
     -- 2 bottom right
 
-    turtlePos:turnLeft()
+    entity:turnLeft()
     sealLava()
     -- 2 bottom forward
 
-    turtlePos:turnLeft()
+    entity:turnLeft()
     -- 2 bottom left
 
     -- Turning corner now
@@ -263,12 +263,12 @@ local function goTunnel()
     sealLava()
     -- 3 bottom forward
 
-    turtlePos:turnRight()
+    entity:turnRight()
     sealLava()
     -- 3 bottom right
 
-    turtlePos:turnLeft()
-    turtlePos:turnLeft()
+    entity:turnLeft()
+    entity:turnLeft()
     sealLava()
     -- 3 bottom left
 
@@ -278,11 +278,11 @@ local function goTunnel()
     sealLava()
     -- 3 top right
 
-    turtlePos:turnRight()
+    entity:turnRight()
     sealLava()
     -- 3 top forward
 
-    turtlePos:turnRight()
+    entity:turnRight()
     sealLava()
     -- 3 top left
 
