@@ -5,7 +5,6 @@
 ---@diagnostic disable: lowercase-global
 
 ---@class CCPeripheral A wrapped peripheral that contains callable functions.
-
 peripheral = {
     ---Provides a list of all peripherals available.
     ---If a device is located directly next to the system, then its name will be listed as the side it is attached to.
@@ -13,7 +12,7 @@ peripheral = {
     ---@return table names A list of the names of all attached peripherals.
     getNames = function () end,
 
-    ---Determines if a preipheral is present with the given name.
+    ---Determines if a peripheral is present with the given name.
     ---@param name string The side or network name to check, i.e. "top" or "monitor_0".
     ---@return boolean isPresent True if a peripheral with the given name is present.
     isPresent = function (name) end,

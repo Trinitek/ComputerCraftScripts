@@ -6,9 +6,11 @@ end
 
 log("Started")
 
----@class RedstoneIntegrator : CCPeripheral
----@field setOutput fun(CCSide, boolean)
-local ri_mech = peripheral.wrap("left")
+local ri_mech = peripheral.wrap("left") --[[@as APRedstoneIntegrator|nil]]
+
+if ri_mech == nil then
+    error("Unable to wrap peripheral.")
+end
 
 local function driveConnect()
     ri_mech.setOutput("top", true)
