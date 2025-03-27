@@ -27,12 +27,12 @@ end
 
 ---@class MovingEntity
 ---@field position Position
----@field p_fnForward fun(): boolean, string
----@field p_fnBack fun(): boolean, string
----@field p_fnUp fun(): boolean, string
----@field p_fnDown fun(): boolean, string
----@field p_fnTurnLeft fun(): boolean, string
----@field p_fnTurnRight fun(): boolean, string
+---@field private p_fnForward fun(): boolean, string
+---@field private p_fnBack fun(): boolean, string
+---@field private p_fnUp fun(): boolean, string
+---@field private p_fnDown fun(): boolean, string
+---@field private p_fnTurnLeft fun(): boolean, string
+---@field private p_fnTurnRight fun(): boolean, string
 MovingEntity = { }
 
 ---@param position Position
@@ -43,7 +43,7 @@ MovingEntity = { }
 ---@param fnTurnLeft fun(): boolean, string
 ---@param fnTurnRight fun(): boolean, string
 function MovingEntity:new(position, fnForward, fnBack, fnUp, fnDown, fnTurnLeft, fnTurnRight)
-    ---@type MovingEntity
+    ---@class MovingEntity
     local o = {
         position = xassert.paramType(position, "position", type(Position)),
         p_fnForward = xassert.paramType(fnForward, "fnForward", xassert.Types.Function),
@@ -180,14 +180,13 @@ end
 ---@class Position
 ---@field point3d Point3D
 ---@field facing Facing
-Position = {
-}
+Position = { }
 
 ---@param point3d? Point3D The origin point. Defaults to (0,0,0) if nil.
 ---@param facing? Facing The direction the turtle is facing. Defaults to "north" if nil.
 ---@return Position
 function Position:new(point3d, facing)
-    ---@type Position
+    ---@class Position
     local o = { };
     setmetatable(o, self);
     self.__index = self;
@@ -236,7 +235,7 @@ PositionHistoryRecord = { }
 
 ---@param point3d Point3D
 function PositionHistoryRecord:new(point3d)
-    ---@type PositionHistoryRecord
+    ---@class PositionHistoryRecord
     local o = { };
     setmetatable(o, self);
     self.__index = self;
@@ -255,7 +254,7 @@ PositionHistory = { }
 
 ---@param entity MovingEntity
 function PositionHistory:new(entity)
-    ---@type PositionHistory
+    ---@class PositionHistory
     local o = { }
     setmetatable(o, self)
     self.__index = self

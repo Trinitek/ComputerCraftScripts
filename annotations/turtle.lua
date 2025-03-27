@@ -1,5 +1,7 @@
 ---https://tweaked.cc/module/turtle.html
 
+---@meta
+
 ---@diagnostic disable: lowercase-global
 
 ---@class CCBlockInfo

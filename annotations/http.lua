@@ -1,5 +1,7 @@
 ---https://tweaked.cc/module/http.html
 
+---@meta
+
 ---@diagnostic disable: lowercase-global
 
 ---@alias CCHttpMethod

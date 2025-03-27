@@ -101,7 +101,7 @@ CCTermSurface = {
     getPaletteColor = function(color) end
 }
 
----@type CCTermSurface
+---@class CCTermSurfaceNative : CCTermSurface
 term = {
     ---Gets the default palette value for a color.
     ---@param color number The color whose palette should be fetched.

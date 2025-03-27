@@ -1,5 +1,7 @@
 ---https://tweaked.cc/module/peripheral.html
 
+---@meta
+
 ---@diagnostic disable: lowercase-global
 
 ---@class CCPeripheral A wrapped peripheral that contains callable functions.

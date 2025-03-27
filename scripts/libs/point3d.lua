@@ -10,7 +10,7 @@ Point3D = { }
 ---@param z integer
 ---@return Point3D
 function Point3D:new(x, y, z)
-    ---@type Point3D
+    ---@class Point3D
     local o = { }
     setmetatable(o, self)
     self.__index = self
@@ -57,7 +57,7 @@ Point3DDelta1D = { }
 ---@param axis Axis
 ---@param amount integer
 function Point3DDelta1D:new(axis, amount)
-    ---@type Point3DDelta1D
+    ---@class Point3DDelta1D
     local o = {
         axis = axis,
         amount = amount

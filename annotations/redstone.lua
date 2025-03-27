@@ -1,5 +1,7 @@
 ---https://tweaked.cc/module/redstone.html
 
+---@meta
+
 ---@diagnostic disable: lowercase-global
 
 ---@alias CCSide "top"|"bottom"|"left"|"right"|"front"|"back"

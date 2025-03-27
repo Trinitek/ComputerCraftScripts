@@ -1,5 +1,7 @@
 ---https://tweaked.cc/module/fs.html
 
+---@meta
+
 ---@diagnostic disable: lowercase-global
 
 ---@class CCFileHandle_Closable

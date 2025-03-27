@@ -6,9 +6,8 @@ end
 
 log("Started")
 
----@type CCPeripheral
----@class RedstoneIntegrator
----@field setOutput function
+---@class RedstoneIntegrator : CCPeripheral
+---@field setOutput fun(CCSide, boolean)
 local ri_mech = peripheral.wrap("left")
 
 local function driveConnect()
@@ -32,21 +31,19 @@ local function driveDown()
 end
 
 ---@class Floor
-Floor =
-{
-    peripheral = nil,
-    sideBtnUp = nil,
-    sideBtnDown = nil,
-    sidePresence = nil
-}
+---@field sideBtnUp CCSide?
+---@field sideBtnDown CCSide?
+---@field sidePresence CCSide?
+Floor = { }
 
 ---Constructs a new Floor instance.
 ---@param periph any            any redstone device that supports `getInput(side: string)`
----@param sideBtnUp CCSide
+---@param sideBtnUp CCSide?
 ---@param sideBtnDown CCSide
 ---@param sidePresence CCSide
 ---@return Floor
 function Floor:new(periph, sideBtnUp, sideBtnDown, sidePresence)
+    ---@class Floor
     local o = { }
     setmetatable(o, self)
     self.__index = self
@@ -105,7 +102,7 @@ local lastKnownFloor = nil
 local currentFloor = nil
 local callingFloor = nil
 local destinationFloor = nil
----@type "D_UP" | "D_DOWN" | "nil"
+---@type "up" | "down" | nil
 local direction = nil
 local isMoving = false
 

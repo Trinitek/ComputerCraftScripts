@@ -1,5 +1,7 @@
 ---https://tweaked.cc/module/_G.html
 
+---@meta
+
 ---@diagnostic disable: lowercase-global
 
 ---@class _G Functions in the global environment, defined in `bios.lua`. This does not include standard Lua functions.

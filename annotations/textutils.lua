@@ -1,5 +1,7 @@
 ---https://tweaked.cc/module/textutils.html
 
+---@meta
+
 ---@diagnostic disable: lowercase-global
 
 ---@class CCTextUtilsSerializeOptions
