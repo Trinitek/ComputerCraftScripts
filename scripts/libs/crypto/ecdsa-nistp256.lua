@@ -1,11 +1,12 @@
 
-require("libs.sha256")
+require("libs.crypto.sha256")
+require("libs.crypto.hmacsha256")
 
 -----------------------------------------------
 -- Type Aliases and Class Definitions
 -----------------------------------------------
 --- Alias for a “bignum” representation: a little‑endian array of numbers (32‑bit words)
----@alias bignum table<number>
+---@alias bignum table<integer>
 
 --- A point on the elliptic curve.
 ---@class ECPoint
@@ -492,36 +493,6 @@ local function der_decode_signature(sig)
 end
 
 -----------------------------------------------
--- HMAC-SHA256 (using our sha256)
------------------------------------------------
-
---- Compute HMAC-SHA256.
----@param key string
----@param data string
----@return string  -- 32-byte MAC
-local function hmac_sha256(key, data)
-    local blockSize = 64
-
-    if #key > blockSize then key = Sha256.hash(key) end
-
-    key = key .. string.rep("\0", blockSize - #key)
-
-    local o_key_pad = {}
-    local i_key_pad = {}
-
-    for i = 1, blockSize do
-    local k = key:byte(i)
-    o_key_pad[i] = string.char(bit32.bxor(k, 0x5c))
-    i_key_pad[i] = string.char(bit32.bxor(k, 0x36))
-    end
-
-    local o_key_pad_str = table.concat(o_key_pad)
-    local i_key_pad_str = table.concat(i_key_pad)
-
-    return Sha256.hash(o_key_pad_str .. Sha256.hash(i_key_pad_str .. data))
-end
-
------------------------------------------------
 -- AES-128 IMPLEMENTATION (CBC mode with PKCS#7 padding)
 -----------------------------------------------
 
@@ -965,7 +936,7 @@ local function ecies_encrypt(pub, plaintext)
     iv = iv .. string.char(math.random(0, 255))
   end
   local ciphertext = aes_cbc_encrypt(plaintext, aes_key, iv)
-  local mac = hmac_sha256(hmac_key, iv .. ciphertext)
+  local mac = HmacSha256.hash(hmac_key, iv .. ciphertext)
   local R_bytes = bn_to_bytes(R.x, 32) .. bn_to_bytes(R.y, 32)
   return R_bytes .. iv .. mac .. ciphertext
 end
@@ -988,7 +959,7 @@ local function ecies_decrypt(priv, blob)
   local key_material = Sha256.hash(bn_to_bytes(S.x, 32))
   local aes_key = key_material:sub(1, 16)
   local hmac_key = key_material:sub(17, 32)
-  local expected_mac = hmac_sha256(hmac_key, iv .. ciphertext)
+  local expected_mac = HmacSha256.hash(hmac_key, iv .. ciphertext)
   assert(mac == expected_mac, "Invalid MAC! Decryption failed.")
   local plaintext = aes_cbc_decrypt(ciphertext, aes_key, iv)
   return plaintext

@@ -2,31 +2,27 @@
 ---@class Sha256
 Sha256 = { }
 
------------------------------------------------
--- SHA-256 IMPLEMENTATION
------------------------------------------------
+---Computes the hash of the given data using the SHA256 algorithm..
+---@param data immutableBytes
+---@return immutableBytes -- 32-byte binary digest.
+Sha256.hash = function(data)
+    local bytes = { }
 
---- Compute SHA-256 digest of a message.
----@param msg string
----@return string  -- 32-byte binary digest.
-Sha256.hash = function(msg)
-    local bytes = {}
-
-    for i = 1, #msg do
-        bytes[i] = msg:byte(i)
+    for i = 1, #data do
+        bytes[i] = data:byte(i)
     end
 
-    local msg_len = #bytes
-    local bit_len = msg_len * 8
+    local dataLength = #bytes
+    local bitLength = dataLength * 8
 
-    bytes[msg_len + 1] = 0x80
+    bytes[dataLength + 1] = 0x80
 
     while ((#bytes * 8) % 512) ~= 448 do
         bytes[#bytes + 1] = 0
     end
 
     for i = 1, 8 do
-        local shifted = bit32.rshift(bit_len, 8 * (8 - i))
+        local shifted = bit32.rshift(bitLength, 8 * (8 - i))
 
         bytes[#bytes + 1] = bit32.band(shifted, 0xFF)
     end
@@ -81,7 +77,8 @@ Sha256.hash = function(msg)
     end
 
     for chunkStart = 1, #bytes, 64 do
-        local w = {}
+        local w = { }
+
         for i = 0, 15 do
             local j = chunkStart + i * 4
 
@@ -96,11 +93,12 @@ Sha256.hash = function(msg)
             w[i] = bit32.band(ssig1(w[i-2]) + w[i-7] + ssig0(w[i-15]) + w[i-16], 0xFFFFFFFF)
         end
 
-        local a,b,c,d,e,f,g,hh = table.unpack(h)
+        local a, b, c, d, e, f, g, hh = table.unpack(h)
 
         for i = 1, 64 do
             local T1 = bit32.band(hh + bsig1(e) + ch(e, f, g) + k[i] + w[i], 0xFFFFFFFF)
             local T2 = bit32.band(bsig0(a) + maj(a, b, c), 0xFFFFFFFF)
+
             hh = g
             g = f
             f = e
@@ -121,7 +119,8 @@ Sha256.hash = function(msg)
         h[8] = bit32.band(h[8] + hh, 0xFFFFFFFF)
     end
 
-    local digest = {}
+    local digest = { }
+
     for i = 1, 8 do
         digest[#digest + 1] = string.char(
             bit32.band(bit32.rshift(h[i], 24), 0xFF),
@@ -132,3 +131,5 @@ Sha256.hash = function(msg)
 
     return table.concat(digest)
 end
+
+return Sha256
