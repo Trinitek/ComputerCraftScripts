@@ -1,12 +1,11 @@
 
 require("libs.crypto.sha256")
 require("libs.crypto.hmacsha256")
+local bn = require("libs.bignum")
 
 -----------------------------------------------
 -- Type Aliases and Class Definitions
 -----------------------------------------------
---- Alias for a “bignum” representation: a little‑endian array of numbers (32‑bit words)
----@alias bignum table<integer>
 
 --- A point on the elliptic curve.
 ---@class ECPoint
@@ -23,335 +22,19 @@ require("libs.crypto.hmacsha256")
 ---@field n bignum
 
 -----------------------------------------------
--- BIG NUMBER ARITHMETIC FUNCTIONS
------------------------------------------------
-
-local BASE = 0x100000000  -- 2^32
-
---- Remove any excess leading zero words.
----@param a bignum
----@return bignum
-local function bn_normalize(a)
-  local A = {table.unpack(a)}
-  while #A > 1 and A[#A] == 0 do
-    table.remove(A)
-  end
-  return A
-end
-
---- Make a copy of a bignum.
----@param a bignum
----@return bignum
-local function bn_copy(a)
-  local copy = {}
-  for i, v in ipairs(a) do
-    copy[i] = v
-  end
-  return copy
-end
-
---- Create a bignum from a (small) Lua number.
----@param n number
----@return bignum
-local function bn_fromInt(n)
-  local result = {}
-  if n == 0 then return {0} end
-  while n > 0 do
-    result[#result + 1] = n % BASE
-    n = math.floor(n / BASE)
-  end
-  return bn_normalize(result)
-end
-
---- Add two bignums.
----@param a bignum
----@param b bignum
----@return bignum
-local function bn_add(a, b)
-  local result = {}
-  local carry = 0
-  local n = math.max(#a, #b)
-  for i = 1, n do
-    local ai = a[i] or 0
-    local bi = b[i] or 0
-    local sum = ai + bi + carry
-    result[i] = sum % BASE
-    carry = math.floor(sum / BASE)
-  end
-  if carry > 0 then
-    result[n + 1] = carry
-  end
-  return bn_normalize(result)
-end
-
---- Subtract two bignums (assumes a >= b).
----@param a bignum
----@param b bignum
----@return bignum
-local function bn_sub(a, b)
-  local result = {}
-  local borrow = 0
-  local n = math.max(#a, #b)
-  for i = 1, n do
-    local ai = a[i] or 0
-    local bi = b[i] or 0
-    local diff = ai - bi - borrow
-    if diff < 0 then
-      diff = diff + BASE
-      borrow = 1
-    else
-      borrow = 0
-    end
-    result[i] = diff
-  end
-  return bn_normalize(result)
-end
-
---- Multiply two bignums.
----@param a bignum
----@param b bignum
----@return bignum
-local function bn_mul(a, b)
-  local result = {}
-  for i = 1, (#a + #b) do
-    result[i] = 0
-  end
-  for i = 1, #a do
-    local carry = 0
-    for j = 1, #b do
-      local index = i + j - 1
-      local prod = a[i] * b[j] + result[index] + carry
-      result[index] = prod % BASE
-      carry = math.floor(prod / BASE)
-    end
-    result[i + #b] = result[i + #b] + carry
-  end
-  return bn_normalize(result)
-end
-
---- Get the bit length of a bignum.
----@param a bignum
----@return number
-local function bn_bit_length(a)
-  a = bn_normalize(a)
-  local last = a[#a]
-  local bits = (#a - 1) * 32
-  while last > 0 do
-    bits = bits + 1
-    last = math.floor(last / 2)
-  end
-  return bits
-end
-
---- Left-shift a bignum by a given number of bits.
----@param a bignum
----@param bits number
----@return bignum
-local function bn_shl(a, bits)
-  local words = math.floor(bits / 32)
-  local rem = bits % 32
-  local result = {}
-  for i = 1, words do
-    result[i] = 0
-  end
-  local carry = 0
-  for i = 1, #a do
-    local word = a[i]
-    local newword = (word * 2^rem + carry) % BASE
-    result[i + words] = newword
-    carry = math.floor(word * 2^rem / BASE)
-  end
-  if carry > 0 then
-    result[#a + words + 1] = carry
-  end
-  return bn_normalize(result)
-end
-
---- Right-shift a bignum by a given number of bits.
----@param a bignum
----@param bits number
----@return bignum
-local function bn_shr(a, bits)
-  local rem = bits % 32
-  local words = math.floor(bits / 32)
-  local result = {}
-  local len = #a
-  if len <= words then
-    return {0}
-  end
-  local carry = 0
-  for i = len, words + 1, -1 do
-    local word = a[i]
-    local cur = word + carry * BASE
-    local r = math.floor(cur / 2^rem)
-    result[i - words] = r
-    carry = cur % 2^rem
-  end
-  return bn_normalize(result)
-end
-
---- Compare two bignums.
----@param a bignum
----@param b bignum
----@return number  -- 1 if a > b, -1 if a < b, 0 if equal.
-local function bn_cmp(a, b)
-  a = bn_normalize(a)
-  b = bn_normalize(b)
-  if #a > #b then return 1
-  elseif #a < #b then return -1 end
-  for i = #a, 1, -1 do
-    if a[i] > b[i] then
-      return 1
-    elseif a[i] < b[i] then
-      return -1
-    end
-  end
-  return 0
-end
-
---- Long division: returns quotient and remainder.
----@param a bignum
----@param m bignum
----@return bignum, bignum
-local function bn_divmod(a, m)
-  local quotient = {0}
-  local remainder = bn_copy(a)
-  local r_bits = bn_bit_length(remainder)
-  local m_bits = bn_bit_length(m)
-  for i = r_bits - m_bits, 0, -1 do
-    local shifted = bn_shl(m, i)
-    if bn_cmp(remainder, shifted) >= 0 then
-      remainder = bn_sub(remainder, shifted)
-      local one = bn_fromInt(1)
-      local add = bn_shl(one, i)
-      quotient = bn_add(quotient, add)
-    end
-  end
-  return bn_normalize(quotient), bn_normalize(remainder)
-end
-
---- Compute a mod m.
----@param a bignum
----@param m bignum
----@return bignum
-local function bn_mod(a, m)
-  local _, r = bn_divmod(a, m)
-  return r
-end
-
---- Modular exponentiation: returns base^exp mod m.
----@param base bignum
----@param exp bignum
----@param m bignum
----@return bignum
-local function bn_modexp(base, exp, m)
-  local result = bn_fromInt(1)
-  base = bn_mod(base, m)
-  while bn_cmp(exp, {0}) > 0 do
-    if exp[1] % 2 == 1 then
-      result = bn_mod(bn_mul(result, base), m)
-    end
-    exp = bn_shr(exp, 1)
-    base = bn_mod(bn_mul(base, base), m)
-  end
-  return result
-end
-
---- Modular inverse: returns the inverse of a modulo m.
----@param a bignum
----@param m bignum
----@return bignum
-local function bn_modinv(a, m)
-  local m0 = bn_copy(m)
-  local x0 = {0}
-  local x1 = {1}
-  local a_copy = bn_mod(bn_copy(a), m)
-  if bn_cmp(m, {1}) == 0 then return {0} end
-  while bn_cmp(a_copy, {1}) > 0 do
-    local q, r = bn_divmod(a_copy, m)
-    a_copy, m = m, r
-    local t = bn_copy(x0)
-    x0 = bn_sub(x1, bn_mul(q, x0))
-    x1 = t
-  end
-  if bn_cmp(x1, {0}) < 0 then
-    x1 = bn_add(x1, m0)
-  end
-  return bn_normalize(x1)
-end
-
---- Create a bignum from a hexadecimal string.
----@param hex string
----@return bignum
-local function bn_fromHex(hex)
-  hex = hex:gsub("^0[xX]", "")
-  local result = bn_fromInt(0)
-  for i = 1, #hex do
-    local digit = tonumber(hex:sub(i, i), 16)
-    result = bn_mul(result, bn_fromInt(16))
-    result = bn_add(result, bn_fromInt(digit))
-  end
-  return bn_normalize(result)
-end
-
---- Convert a bignum to a hexadecimal string.
----@param a bignum
----@return string
-local function bn_toHex(a)
-  a = bn_normalize(a)
-  local hex = ""
-  for i = #a, 1, -1 do
-    hex = hex .. string.format("%08X", a[i])
-  end
-  hex = hex:gsub("^0+", "")
-  return "0x" .. (hex == "" and "0" or hex)
-end
-
---- Convert a bignum into a big-endian byte string.
----@param bn bignum
----@param bytes_len? number  -- Optional length (in bytes) for zero-padding.
----@return string
-local function bn_to_bytes(bn, bytes_len)
-  local hex = bn_toHex(bn):sub(3)  -- Remove the "0x" prefix.
-  if #hex % 2 == 1 then hex = "0" .. hex end
-  if bytes_len then
-    local needed = bytes_len * 2 - #hex
-    if needed > 0 then
-      hex = string.rep("0", needed) .. hex
-    end
-  end
-  local res = {}
-  for i = 1, #hex, 2 do
-    res[#res + 1] = string.char(tonumber(hex:sub(i, i+1), 16))
-  end
-  return table.concat(res)
-end
-
---- Convert a big-endian byte string into a bignum.
----@param s string
----@return bignum
-local function bn_from_bytes(s)
-  local hex = {}
-  for i = 1, #s do
-    hex[#hex + 1] = string.format("%02X", s:byte(i))
-  end
-  return bn_fromHex("0x" .. table.concat(hex))
-end
-
------------------------------------------------
 -- ELLIPTIC CURVE (NIST P-256) OPERATIONS
 -----------------------------------------------
 
 ---@type ECCurve
 local curve = {
-    p = bn_fromHex("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF"),
-    a = bn_fromHex("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC"),
-    b = bn_fromHex("0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B"),
+    p = bn.fromHex("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF"),
+    a = bn.fromHex("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC"),
+    b = bn.fromHex("0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B"),
     G = {
-        x = bn_fromHex("0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296"),
-        y = bn_fromHex("0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5")
+        x = bn.fromHex("0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296"),
+        y = bn.fromHex("0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5")
     },
-    n = bn_fromHex("0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"),
+    n = bn.fromHex("0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"),
 }
 
 --- Elliptic curve point doubling.
@@ -360,11 +43,11 @@ local curve = {
 local function ec_double(P)
     if P.infinity then return P end
     local p = curve.p
-    local lambda = bn_mod(
-      bn_mul(bn_add(bn_mul(bn_fromInt(3), bn_mul(P.x, P.x)), curve.a),
-             bn_modinv(bn_mul(bn_fromInt(2), P.y), p)), p)
-    local x_r = bn_mod(bn_sub(bn_mul(lambda, lambda), bn_mul(bn_fromInt(2), P.x)), p)
-    local y_r = bn_mod(bn_sub(bn_mul(lambda, bn_sub(P.x, x_r)), P.y), p)
+    local lambda = bn.mod(
+      bn.mul(bn.add(bn.mul(bn.fromInt(3), bn.mul(P.x, P.x)), curve.a),
+             bn.modinv(bn.mul(bn.fromInt(2), P.y), p)), p)
+    local x_r = bn.mod(bn.sub(bn.mul(lambda, lambda), bn.mul(bn.fromInt(2), P.x)), p)
+    local y_r = bn.mod(bn.sub(bn.mul(lambda, bn.sub(P.x, x_r)), P.y), p)
     return {x = x_r, y = y_r}
 end
 
@@ -376,17 +59,17 @@ local function ec_add(P, Q)
   if P.infinity then return Q end
   if Q.infinity then return P end
   local p = curve.p
-  if bn_cmp(P.x, Q.x) == 0 then
-    local temp = bn_mod(bn_add(P.y, Q.y), p)
-    if bn_cmp(temp, {0}) == 0 then
+  if bn.cmp(P.x, Q.x) == 0 then
+    local temp = bn.mod(bn.add(P.y, Q.y), p)
+    if bn.cmp(temp, {0}) == 0 then
       return {infinity = true}  -- P and Q are inverses.
     else
       return ec_double(P)  -- P == Q.
     end
   end
-  local lambda = bn_mod(bn_mul(bn_sub(Q.y, P.y), bn_modinv(bn_sub(Q.x, P.x), p)), p)
-  local x_r = bn_mod(bn_sub(bn_sub(bn_mul(lambda, lambda), P.x), Q.x), p)
-  local y_r = bn_mod(bn_sub(bn_mul(lambda, bn_sub(P.x, x_r)), P.y), p)
+  local lambda = bn.mod(bn.mul(bn.sub(Q.y, P.y), bn.modinv(bn.sub(Q.x, P.x), p)), p)
+  local x_r = bn.mod(bn.sub(bn.sub(bn.mul(lambda, lambda), P.x), Q.x), p)
+  local y_r = bn.mod(bn.sub(bn.mul(lambda, bn.sub(P.x, x_r)), P.y), p)
   return {x = x_r, y = y_r}
 end
 
@@ -397,7 +80,7 @@ end
 local function ec_scalar_mul(P, d)
   local result = {infinity = true}  -- point at infinity.
   local addend = P
-  while bn_cmp(d, {0}) > 0 do
+  while bn.cmp(d, {0}) > 0 do
     if d[1] % 2 == 1 then
       if result.infinity then
         result = addend
@@ -405,7 +88,7 @@ local function ec_scalar_mul(P, d)
         result = ec_add(result, addend)
       end
     end
-    d = bn_shr(d, 1)
+    d = bn.shr(d, 1)
     addend = ec_double(addend)
   end
   return result
@@ -422,7 +105,7 @@ local function generate_keypair()
   for i = 1, 8 do
     priv[i] = math.random(0, 0xFFFFFFFF)
   end
-  priv = bn_mod(priv, curve.n)
+  priv = bn.mod(priv, curve.n)
   local pub = ec_scalar_mul(curve.G, priv)
   return priv, pub
 end
@@ -441,10 +124,10 @@ end
 -----------------------------------------------
 
 --- DER-encode an INTEGER from a bignum (minimally encoded).
----@param bn bignum
+---@param n bignum
 ---@return string
-local function der_encode_integer(bn)
-  local bytes = bn_to_bytes(bn)
+local function der_encode_integer(n)
+  local bytes = bn.toBytes(n)
   local i = 1
   while i < #bytes and bytes:byte(i) == 0 do
     i = i + 1
@@ -487,8 +170,8 @@ local function der_decode_signature(sig)
   local s_len = sig:byte(pos)
   pos = pos + 1
   local s_bytes = sig:sub(pos, pos + s_len - 1)
-  local r = bn_from_bytes(r_bytes)
-  local s = bn_from_bytes(s_bytes)
+  local r = bn.from_bytes(r_bytes)
+  local s = bn.from_bytes(s_bytes)
   return r, s
 end
 
@@ -924,10 +607,10 @@ local function ecies_encrypt(pub, plaintext)
   for i = 1, 8 do
     k[i] = math.random(0, 0xFFFFFFFF)
   end
-  k = bn_mod(k, curve.n)
+  k = bn.mod(k, curve.n)
   local R = ec_scalar_mul(curve.G, k)
   local S = ec_scalar_mul(pub, k)
-  local key_material = Sha256.hash(bn_to_bytes(S.x, 32))  -- 32-byte key material.
+  local key_material = Sha256.hash(bn.to_bytes(S.x, 32))  -- 32-byte key material.
   local aes_key = key_material:sub(1, 16)
   local hmac_key = key_material:sub(17, 32)
   -- Generate a random 16-byte IV.
@@ -937,7 +620,7 @@ local function ecies_encrypt(pub, plaintext)
   end
   local ciphertext = aes_cbc_encrypt(plaintext, aes_key, iv)
   local mac = HmacSha256.hash(hmac_key, iv .. ciphertext)
-  local R_bytes = bn_to_bytes(R.x, 32) .. bn_to_bytes(R.y, 32)
+  local R_bytes = bn.to_bytes(R.x, 32) .. bn.to_bytes(R.y, 32)
   return R_bytes .. iv .. mac .. ciphertext
 end
 
@@ -949,14 +632,14 @@ local function ecies_decrypt(priv, blob)
   local R_x_bytes = blob:sub(1, 32)
   local R_y_bytes = blob:sub(33, 64)
   local R = {
-    x = bn_from_bytes(R_x_bytes),
-    y = bn_from_bytes(R_y_bytes)
+    x = bn.from_bytes(R_x_bytes),
+    y = bn.from_bytes(R_y_bytes)
   }
   local iv = blob:sub(65, 80)
   local mac = blob:sub(81, 112)
   local ciphertext = blob:sub(113)
   local S = ec_scalar_mul(R, priv)
-  local key_material = Sha256.hash(bn_to_bytes(S.x, 32))
+  local key_material = Sha256.hash(bn.to_bytes(S.x, 32))
   local aes_key = key_material:sub(1, 16)
   local hmac_key = key_material:sub(17, 32)
   local expected_mac = HmacSha256.hash(hmac_key, iv .. ciphertext)
