@@ -1,0 +1,6 @@
+/* https://github.com/LuaLS/lua-language-server/wiki/Configuration-File */
+{
+    "$schema": "https://raw.githubusercontent.com/sumneko/vscode-lua/master/setting/schema.json",
+    "runtime.version": "Lua 5.2",
+    "workspace.library": ["annotations"]
+}
