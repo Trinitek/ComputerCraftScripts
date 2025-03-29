@@ -7,19 +7,25 @@ local bn = require("libs.bignum")
 -- Type Aliases and Class Definitions
 -----------------------------------------------
 
---- A point on the elliptic curve.
+---Represents a point on an elliptic curve.
 ---@class ECPoint
----@field x bignum
----@field y bignum
----@field infinity? boolean  -- true if point is at infinity
+---@field x? bignum -- X coordinate. Nil if infinity.
+---@field y? bignum -- Y coordinate. Nil if infinity.
+---@field infinity? boolean -- True if point is at infinity.
 
---- The elliptic curve parameters (NIST P‑256)
+---Represents some elliptic curve.
 ---@class ECCurve
----@field p bignum
----@field a bignum
----@field b bignum
----@field G ECPoint
----@field n bignum
+---@field p bignum -- Prime modulus
+---@field a bignum -- Curve coefficient a
+---@field b bignum -- Curve coefficient b
+---@field n bignum -- Order of the base point
+---@field G ECPoint -- Base point of the curve
+
+---Represents the full set of elliptic curve parameters for public and optionally private cryptographic operations.
+---@class ECParameters
+---@field curve ECCurve
+---@field publickey ECPoint
+---@field privatekey? bignum
 
 -----------------------------------------------
 -- ELLIPTIC CURVE (NIST P-256) OPERATIONS
@@ -30,11 +36,11 @@ local curve = {
     p = bn.fromHex("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF"),
     a = bn.fromHex("0xFFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC"),
     b = bn.fromHex("0x5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B"),
+    n = bn.fromHex("0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"),
     G = {
         x = bn.fromHex("0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296"),
         y = bn.fromHex("0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5")
-    },
-    n = bn.fromHex("0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551"),
+    }
 }
 
 --- Elliptic curve point doubling.
@@ -170,8 +176,8 @@ local function der_decode_signature(sig)
   local s_len = sig:byte(pos)
   pos = pos + 1
   local s_bytes = sig:sub(pos, pos + s_len - 1)
-  local r = bn.from_bytes(r_bytes)
-  local s = bn.from_bytes(s_bytes)
+  local r = bn.fromBytes(r_bytes)
+  local s = bn.fromBytes(s_bytes)
   return r, s
 end
 
@@ -610,7 +616,7 @@ local function ecies_encrypt(pub, plaintext)
   k = bn.mod(k, curve.n)
   local R = ec_scalar_mul(curve.G, k)
   local S = ec_scalar_mul(pub, k)
-  local key_material = Sha256.hash(bn.to_bytes(S.x, 32))  -- 32-byte key material.
+  local key_material = Sha256.hash(bn.toBytes(S.x, 32))  -- 32-byte key material.
   local aes_key = key_material:sub(1, 16)
   local hmac_key = key_material:sub(17, 32)
   -- Generate a random 16-byte IV.
@@ -620,7 +626,7 @@ local function ecies_encrypt(pub, plaintext)
   end
   local ciphertext = aes_cbc_encrypt(plaintext, aes_key, iv)
   local mac = HmacSha256.hash(hmac_key, iv .. ciphertext)
-  local R_bytes = bn.to_bytes(R.x, 32) .. bn.to_bytes(R.y, 32)
+  local R_bytes = bn.toBytes(R.x, 32) .. bn.toBytes(R.y, 32)
   return R_bytes .. iv .. mac .. ciphertext
 end
 
@@ -632,14 +638,14 @@ local function ecies_decrypt(priv, blob)
   local R_x_bytes = blob:sub(1, 32)
   local R_y_bytes = blob:sub(33, 64)
   local R = {
-    x = bn.from_bytes(R_x_bytes),
-    y = bn.from_bytes(R_y_bytes)
+    x = bn.fromBytes(R_x_bytes),
+    y = bn.fromBytes(R_y_bytes)
   }
   local iv = blob:sub(65, 80)
   local mac = blob:sub(81, 112)
   local ciphertext = blob:sub(113)
   local S = ec_scalar_mul(R, priv)
-  local key_material = Sha256.hash(bn.to_bytes(S.x, 32))
+  local key_material = Sha256.hash(bn.toBytes(S.x, 32))
   local aes_key = key_material:sub(1, 16)
   local hmac_key = key_material:sub(17, 32)
   local expected_mac = HmacSha256.hash(hmac_key, iv .. ciphertext)
